@@ -28,7 +28,7 @@ import argparse
 PATH_DATA = './' # Move it to .env?
 CACHE_DIR = '/workspace1/sebcif/hfcache/' # same here?
 DEVICE_MAP = os.environ.get("DEVICE_MAP", "cuda:0")
-    
+
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
     def score2(model, tokenizer, sentence):
         """
-        HuggingFace code:
+        HuggingFace code: https://huggingface.co/docs/transformers/perplexity
         """
         encodings = tokenizer(sentence, return_tensors='pt')
         max_length = 4032
@@ -120,10 +120,10 @@ if __name__ == '__main__':
             if end_loc == seq_len:
                 break
 
-        nll_mean = torch.stack(nlls).mean() 
+        nll_mean = torch.stack(nlls).mean()  
         # ppl = torch.exp(torch.stack(nlls).mean())
         # return ppl
-        return nll_mean
+        return nll_mean # return the mean loss
 
     #country = 'United_Kingdom'
     #gender = 'male'
@@ -171,9 +171,9 @@ if __name__ == '__main__':
                     _score = score2(model, tokenizer, sent).item()
                     list_PPL[country][gender].append(_score)
                 # buff
-                with open(path_dump_perturbed_ppl + '_PPL_buff_{list_countries[0]}.pkl', 'wb') as f: # Here it fails if folder doesnt exist
+                with open(path_dump_perturbed_ppl + f'_PPL_buff_{list_countries[0]}.pkl', 'wb') as f: # Here it fails if folder doesnt exist
                     pkl.dump(list_PPL, f)
     with open(path_dump_perturbed_ppl + f'_PPL_{list_countries[0]}.pkl', 'wb') as f:
         pkl.dump(list_PPL, f)
 
-    os.remove(path_dump_perturbed_ppl + '_PPL_buff_{list_countries[0]}.pkl')
+    os.remove(path_dump_perturbed_ppl + f'_PPL_buff_{list_countries[0]}.pkl')
