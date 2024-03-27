@@ -4,20 +4,22 @@ Soit je compare les changements par rapport aux predictions d'avant, en calculan
 - la diff moyenne de proba neg
 - diff entre Ppos-Pneg en moyenne
 - la difference des F1-pro, F1-neg ?
-- le pourcentage de prediction differentes des predictions normales sur les positif/negatif (i.e. #FP et FN sur pos/neg quand on compare par rapport aux pred originales)
+- le pourcentage de prediction differentes des predictions normales sur les 
+positif/negatif (i.e. #FP et FN sur pos/neg quand on compare par rapport aux pred originales)
 
 Valentin Barriere, 02/22
 """
-import os
 import argparse
+import os
 import pickle as pkl
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from scipy.special import softmax
 from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
-from transformers import TFAutoModelForSequenceClassification, AutoTokenizer, AutoConfig
+from transformers import AutoConfig, AutoTokenizer, TFAutoModelForSequenceClassification
 
 from CountryGenderNamePerturbation import PerturbedExamples
 
@@ -42,8 +44,11 @@ def read_text_data_to_df(text_file_path, labels_file_path, encoding="utf-8"):
     df = pd.DataFrame({"tweet": text_data, "label": labels_data})
     return df
 
+
 def read_tsv_data_to_df(tsv_file_path, text_col, label_col, encoding="utf-8"):
-    tsv_df = pd.read_csv(tsv_file_path, sep="\t", quotechar='"', encoding=encoding, header=0)
+    tsv_df = pd.read_csv(
+        tsv_file_path, sep="\t", quotechar='"', encoding=encoding, header=0
+    )
 
     text_data = tsv_df[text_col].values
     labels_data = tsv_df[label_col].values
@@ -86,6 +91,7 @@ def load_df_data(
     else:
         # TODO: no return inside a if... and no function inside a function
         if multi_labels:
+
             def func_mlabels(mlabels):
                 y = np.zeros((len(dict_lab))).astype(np.int32)
                 for lab in mlabels.split(","):
@@ -96,7 +102,11 @@ def load_df_data(
             train_y = np.concatenate(
                 [
                     k[np.newaxis, :]
-                    for k in df["label"].astype(str).str.lower().map(func_mlabels).values
+                    for k in df["label"]
+                    .astype(str)
+                    .str.lower()
+                    .map(func_mlabels)
+                    .values
                 ]
             )
         else:
@@ -130,7 +140,9 @@ def load_df_data(
                             print("Dataset of unlabeled data...ok!")
 
                     # impossible if multi-labels
-                    train_y = df["label"].str.lower().map(dict_lab).astype(np.int32).values
+                    train_y = (
+                        df["label"].str.lower().map(dict_lab).astype(np.int32).values
+                    )
 
                     if len(dict_lab) != len(df["label"].unique()):
                         print("There might be a problem with the labels...")
@@ -354,6 +366,7 @@ def create_input_array_transfo3(sentences, tokenizer, MAX_SEQ_LEN=MAX_SEQ_LEN_IN
         encoded_inputs["token_type_ids"],
     ]
 
+
 def _kl_div(P, Q, mean_of_divs=True):
     """
     2 options: mean of the KL on each example or mean of the probabilities and KL global
@@ -380,9 +393,11 @@ def symetric_kl(P, Q, mean_of_divs=True):
     ) / 2
 
 
-def get_model_tokenizer_and_config(model_name_or_path,
-                                   model_gen=TFAutoModelForSequenceClassification,
-                                   tok_gen=AutoTokenizer):
+def get_model_tokenizer_and_config(
+    model_name_or_path,
+    model_gen=TFAutoModelForSequenceClassification,
+    tok_gen=AutoTokenizer,
+):
     tokenizer = tok_gen.from_pretrained(
         model_name_or_path, proxies=proxies, cache_dir=CACHE_DIR
     )
@@ -543,16 +558,59 @@ def check_file_exists_while_parsing(file_path):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Receives arguments to run biases calculation over defined datasets.")
-    parser.add_argument("--model_name", type=str, help="Name of the model to run", default="cardiffnlp/twitter-xlm-roberta-base-sentiment")
-    parser.add_argument("--data_path", type=str, help="Path where data is stored", default=DATA_PATH)
-    parser.add_argument("--data_type", type=str, choices=["txt", "tsv"], help="Type of data (txt or tsv)", default="txt")
-    parser.add_argument("--data_tsv", type=str, help="File containing the data (required if data_type is tsv)")
-    parser.add_argument("--text_col", type=str, help="Column containing the text data in the tsv file (required if data_type is tsv)")
-    parser.add_argument("--label_col", type=str, help="Column containing the label data in the tsv file (required if data_type is tsv)")
-    parser.add_argument("--text_file", type=str, help="File containing the text data (required if data_type is txt)", default="test_text.txt")
-    parser.add_argument("--label_file", type=str, help="File containing the label data (required if data_type is txt)", default="test_labels.txt")
-    parser.add_argument("--label_type", type=str, choices=["str", "int"], help="Type of labels (str or int)", default="int")
+    parser = argparse.ArgumentParser(
+        description="Receives arguments to run biases calculation over defined datasets."
+    )
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        help="Name of the model to run",
+        default="cardiffnlp/twitter-xlm-roberta-base-sentiment",
+    )
+    parser.add_argument(
+        "--data_path", type=str, help="Path where data is stored", default=DATA_PATH
+    )
+    parser.add_argument(
+        "--data_type",
+        type=str,
+        choices=["txt", "tsv"],
+        help="Type of data (txt or tsv)",
+        default="txt",
+    )
+    parser.add_argument(
+        "--data_tsv",
+        type=str,
+        help="File containing the data (required if data_type is tsv)",
+    )
+    parser.add_argument(
+        "--text_col",
+        type=str,
+        help="Column containing the text data in the tsv file (required if data_type is tsv)",
+    )
+    parser.add_argument(
+        "--label_col",
+        type=str,
+        help="Column containing the label data in the tsv file (required if data_type is tsv)",
+    )
+    parser.add_argument(
+        "--text_file",
+        type=str,
+        help="File containing the text data (required if data_type is txt)",
+        default="test_text.txt",
+    )
+    parser.add_argument(
+        "--label_file",
+        type=str,
+        help="File containing the label data (required if data_type is txt)",
+        default="test_labels.txt",
+    )
+    parser.add_argument(
+        "--label_type",
+        type=str,
+        choices=["str", "int"],
+        help="Type of labels (str or int)",
+        default="int",
+    )
     parser.add_argument(
         "--list_countries",
         help="countries to test",
@@ -567,12 +625,16 @@ def parse_arguments():
     args = parser.parse_args()
     if args.data_type == "tsv":
         if not (args.data_tsv and args.text_col and args.label_col):
-            parser.error("When data_type is tsv, data_tsv, text_col, and label_col are required.")
+            parser.error(
+                "When data_type is tsv, data_tsv, text_col, and label_col are required."
+            )
         data_tsv_path = os.path.join(args.data_path, args.data_tsv)
         args.data_tsv = check_file_exists_while_parsing(data_tsv_path)
     else:
         if not (args.text_file and args.label_file):
-            parser.error("When data_type is txt, text_file and label_file are required.")
+            parser.error(
+                "When data_type is txt, text_file and label_file are required."
+            )
         text_file_path = os.path.join(args.data_path, args.text_file)
         args.text_file = check_file_exists_while_parsing(text_file_path)
         label_file_path = os.path.join(args.data_path, args.label_file)
@@ -582,7 +644,7 @@ def parse_arguments():
 
 def main(args):
     model_name = args.model_name
-    
+
     model, tokenizer, config = get_model_tokenizer_and_config(model_name)
 
     data_path = args.data_path
@@ -597,10 +659,13 @@ def main(args):
         label_col = args.label_col
         df = read_tsv_data_to_df(tsv_path, text_col, label_col)
 
-
     label_type = args.label_type
-    dict_lab = {k.lower():v for k,v in config.label2id.items()}
-    X_text, y = load_df_data(df, label_type, dict_lab, )
+    dict_lab = {k.lower(): v for k, v in config.label2id.items()}
+    X_text, y = load_df_data(
+        df,
+        label_type,
+        dict_lab,
+    )
 
     if args.test:
         X_text = X_text[:200]
