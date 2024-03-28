@@ -17,30 +17,27 @@ Portugal Hungary Poland Turkey \
 
 Author: Valentin Barriere, 02/22
 """
-import sys
-# insert at 1, 0 is the script path (or '' in REPL)
-# Path containing the CountryGenderNamePerturbation.py script, if in the same folder, you can comment this line
-sys.path.insert(1, '/home/barriva/Valentin_code/Biases/')
-
-from Transformers_data import create_input_array, loadTsvData
+import os
+import argparse
+from utils import create_input_array, loadTsvData
 from CountryGenderNamePerturbation import PerturbedExamples
 import numpy as np
 from tqdm import tqdm
 from scipy.special import softmax
+from scipy.special import kl_div
 from sklearn.metrics import confusion_matrix
 import pandas as pd
 import pickle as pkl
 import os
+from dotenv import load_dotenv
+from transformers import TFAutoModelForSequenceClassification, AutoTokenizer, AutoConfig
 
-from transformers import *
-CACHE_DIR = '/home/barriva/data/.cache/torch/transformers'
+load_dotenv()
+CACHE_DIR = os.getenv("CACHE_DIR", None)
+PATH_DATA = os.getenv("PATH_DATA", None)
 proxies = None
 
-import argparse
-# PATH_DATA = '/eos/jeodpp/data/projects/REFOCUS/data/Valentin/'
-PATH_DATA = '/home/barriva/data/'
 
-from scipy.special import kl_div
 
 
 def _kl_div_scipy(P,Q):
@@ -70,38 +67,6 @@ def _kl_div(P,Q, mean_of_divs=True):
 def symetric_kl(P,Q, mean_of_divs=True):
     return (_kl_div(P,Q,mean_of_divs=mean_of_divs) + _kl_div(Q,P,mean_of_divs=mean_of_divs))/2
 
-# import tweetnlp
-
-
-# Will never use this setting in the end, there is just one model that I'm interested in, and I will dl the datasets
-# def prepare_data_and_model_tweetnlp(modelFilePath, task='sentiment'):
-#     """
-#     """
-
-#     model = tweetnlp.load_model('hate')
-#     # model.hate('Whoever just unfollowed me you a bitch', return_probability=True)
-
-#     # change model.predict() so it outputs a vector of proba in line with a dict_lab
-#     # Also see what is the output when a lot of inputs 
-
-#     dataset, label2id = tweetnlp.load_dataset(task)
-#     X_text, y = dataset, label2id
-    
-#     return model, tokenizer, X_text, y
-
-# Preprocess text (username and link placeholders)
-def preprocess(text):
-    new_text = []
-    for t in text.split(" "):
-        t = '@user' if t.startswith('@') and len(t) > 1 else t
-        t = 'http' if t.startswith('http') else t
-        new_text.append(t)
-    return " ".join(new_text)
-# text = preprocess(text)
-
-# Andrazp/multilingual-hate-speech-robacofi
-# was jointly fine-tuned on five languages, namely Arabic, Croatian, English, German and Slovenian
-
 def prepare_data_and_model_from_scratch(
     modelFilePath='cardiffnlp/twitter-xlm-roberta-base-sentiment',
     input_data_File=None, 
@@ -119,12 +84,7 @@ def prepare_data_and_model_from_scratch(
     config = AutoConfig.from_pretrained(modelFilePath)
     dict_lab = {v.lower():k for k,v in config.id2label.items()}
 
-    # Finally I will always use path_corpus, it's easier 
-    if path_corpus:
-        X_text, y = loadTsvData(path_corpus + input_data_File, dict_lab, multi_labels = False, cumsum_label_vectors = False, no_y = True)
-    # else:
-        # dataset, label2id = tweetnlp.load_dataset(task)
-        # X_text, y = dataset, label2id
+    X_text, y = loadTsvData(os.path.join(path_corpus, input_data_File), dict_lab, multi_labels = False, cumsum_label_vectors = False,)# no_y = True)
     
     return model, tokenizer, dict_lab, X_text, y
 
@@ -133,7 +93,7 @@ def prepare_data_and_model(modelFilePath, model, input_data_File, dict_lab, path
     """
     """
     model.load_weights(modelFilePath)
-    X_text, y = loadTsvData(path_corpus + input_data_File, dict_lab, multi_labels = False, cumsum_label_vectors = False, no_y = True)
+    X_text, y = loadTsvData(os.path.join(path_corpus, input_data_File), dict_lab, multi_labels = False, cumsum_label_vectors = False,)# no_y = True)
     
     return model, X_text, y
 
@@ -158,7 +118,7 @@ def sum_pos_neg_emotions(proba):
     # return np.concatenate((proba, proba[:,1:2] + proba[:,0:1], proba[:,2:3] + proba[:,3:4]), axis=1)
     # return np.concatenate((proba, np.sum(proba[:,:2], axis=1), np.sum(proba[:,2:], axis=1)), axis=1)
 
-def create_dict_and_mapping_labels(dict_lab, dict_pos_neg):
+def create_dict_and_mapping_labels(dict_lab, dict_pos_neg, model_name):
     """
     WARNING: 
     To deal with errors contained in the config.labels2id of your model
@@ -205,23 +165,22 @@ def create_dict_and_mapping_labels(dict_lab, dict_pos_neg):
 
         print('new mapping:', str_pos, str_neg)
 
-        return dict_lab, dict_lab_ini, str_pos, str_neg
+    return dict_lab, dict_lab_ini, str_pos, str_neg
 
 
 def _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab, list_countries=[], n_duplicates=10, 
                               dict_pos_neg = {'positive' : ['yes', 'non-hate', 'non-offensive', 'joy'], 'negative' : ['no', 'hate', 'offensive', 'sadness']}, 
+                              perturb=True,
                               path_dump_perturbed = '/eos/jeodpp/data/projects/REFOCUS/data/Valentin/Biases/Perturbed_text_stances_en.pkl',
-                             model_name='model', use_existing_dic=True, male_only=False):
+                              model_name='model', use_existing_dic=True, male_only=False, emotion_task=False):
     """
     The function itself, taking model, X_text, y as inputs
 
     TEST IF WORKING FOR EMOTION WHEN THERE ARE 2 LABELS FOR POS / AND 2 FOR NEG
     """
     
-    dict_lab, dict_lab_ini, str_pos, str_neg = create_dict_and_mapping_labels(dict_lab, dict_pos_neg)
+    dict_lab, dict_lab_ini, str_pos, str_neg = create_dict_and_mapping_labels(dict_lab, dict_pos_neg, model_name)
 
-    # TODO: Change this ugly kludge, to avoid to do it again... 
-    perturb = False
     if perturb:
         perturber = PerturbedExamples(list_countries) if len(list_countries) else PerturbedExamples()
         print("Perturbing examples...")
@@ -232,9 +191,8 @@ def _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab, list_countr
             if os.path.isfile(path_dump_perturbed):
                 with open(path_dump_perturbed, 'rb') as fp:
                     perturbed_X_text_existing = pkl.load(fp)
-            for key in perturbed_X_text_existing:
-                perturbed_X_text[key] = perturbed_X_text_existing[key]
-
+                for key in perturbed_X_text_existing:
+                    perturbed_X_text[key] = perturbed_X_text_existing[key]
         # Save the sentences obtained for reuse later
         with open(path_dump_perturbed, 'wb') as fp:
             pkl.dump(perturbed_X_text, fp)
@@ -384,18 +342,23 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     modelFilePath = args.model_name
-    path_corpus = args.path_corpora + args.name_corpora + '/'
+    path_corpus = os.path.join(args.path_corpora, args.name_corpora)
     input_data_File = args.data_tsv
 
 
     model, tokenizer, dict_lab, X_text, y = prepare_data_and_model_from_scratch(modelFilePath, input_data_File, path_corpus)    
 
+    model_name_underscore = modelFilePath.replace('/', '_')
     if args.test:
         X_text = X_text[:200]
-
-    df_bias = _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab, list_countries=args.list_countries, n_duplicates=args.n_duplicates,
-        path_dump_perturbed = path_corpus + 'Perturbed_'+args.data_tsv, model_name=modelFilePath.replace('/', '_'), male_only=args.male_only)
+    df_bias = _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab,
+                                        list_countries=args.list_countries,
+                                        n_duplicates=args.n_duplicates,
+                                        path_dump_perturbed = os.path.join(path_corpus, f'Perturbed_{args.data_tsv}'),
+                                        model_name=model_name_underscore,
+                                        male_only=args.male_only)
     if not args.test:
-        df_bias.to_csv(path_corpus + '%s/'%modelFilePath.replace('/', '_') + 'biases_' + input_data_File + '.tsv', sep='\t')
+        out_file_name = f'{model_name_underscore}biases_{input_data_File}.tsv'
+        df_bias.to_csv(os.path.join(path_corpus, out_file_name), sep='\t')
     else:
         print(df_bias)
