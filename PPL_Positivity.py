@@ -9,7 +9,7 @@ python ../PPL_Positivity.py \
 --list_gender male \
 --verbose
 
-Author: Valentin Barriere, 01/24
+Author: Anonymous_Submission 01/24
 """
 import os
 import torch

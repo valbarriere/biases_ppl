@@ -1,11 +1,4 @@
 """
-Soit je compare les changements par rapport aux predictions d'avant, en calculant:
-- la diff moyenne de proba pos 
-- la diff moyenne de proba neg 
-- diff entre Ppos-Pneg en moyenne 
-- la difference des F1-pro, F1-neg ? 
-- le pourcentage de prediction differentes des predictions normales sur les positif/negatif (i.e. #FP et FN sur pos/neg quand on compare par rapport aux pred originales)
-
 Use it like:
 python biases_calculation_huggingfacehub_PPL.py \
 --name_corpora PPL_Positivity \
@@ -15,7 +8,7 @@ India Canada Australia New_Zealand United_States South_Africa \
 Portugal Hungary Poland Turkey \
 --n_duplicates 50
 
-Author: Valentin Barriere, 02/22
+Author: Anonymous_Submission 01/24
 """
 import os
 import argparse

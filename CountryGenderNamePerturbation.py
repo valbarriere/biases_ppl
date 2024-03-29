@@ -2,9 +2,10 @@
 Script transforming the data into perturbed data with names typical from other countries, in order to test the bias of the model
 Just return the examples with entities inside
 Only work for english for now since it uses en_core_web_sm for the NER
+
+Author: Anonymous_Submission 01/24
 """
 import spacy
-# VB 13/10/23
 # Change en_core_web_sm for xx_ent_wiki_sm (+ efficiency) or xx_sent_ud_sm (+ accuracy) in order to go multilingual ; also I use xx_ent_wiki_sm just for entities
 # see: https://spacy.io/models
 # nlp = spacy.load('en_core_web_sm')
