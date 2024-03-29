@@ -72,8 +72,6 @@ python PPL_Positivity.py \
 --model_name cardiffnlp/twitter-xlm-roberta-base
 ```
 
-Finally you can visualize the results using the given notebooks in the repo.
-
 In order to calculate the global-level correlation between perplexity and classes outputs on raw sentences (creating Table 2 of the Paper):
 ```bash
 python generate_table2.py \
