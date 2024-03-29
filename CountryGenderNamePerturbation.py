@@ -103,8 +103,6 @@ class PerturbedExamples():
 if __name__ == '__main__':
 	
 	data = ['John is a very smart person, he lives in Ireland.','Luke Smith has 3 sisters.', 'Luke is awful', 'I do not like salmon', 'Mary came home yesterday']
-	# pdata = list(nlp.pipe(data))
-	# print(Perturb.perturb(pdata, Perturb.change_names_country_specific('France', 'male'), n=3, meta=True, keep_original=True))
 	
 	perturber = PerturbedExamples(list_countries=['France', 'Spain', 'Sweden'])
 	
