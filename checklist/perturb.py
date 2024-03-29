@@ -8,7 +8,7 @@ Need to add 2 jsons in the data/ folder of the library
 Depending on BOOL_USE_CHECKLIST_NAMES ou can use:
 - the names I scrapped from the Web
 - the names available in checklist
-Valentin Barriere, 12/21
+Author: Anonymous_Submission 01/24
 """
 import numpy as np
 import collections
@@ -33,7 +33,7 @@ def load_data():
 		'country': basic['country'],
 	}
 
-	# Added by VB 
+	# Added by Anon
 	# enhance data['name'] that contains {'male' : [], 'female' : []} with new keys on the country of origin 
 	if BOOL_USE_CHECKLIST_NAMES:
 		editor = Editor()
@@ -133,7 +133,7 @@ class Perturb:
 			a = []
 			x = []
 			if not p or all([not x for x in p]):
-				# added by VB
+				# added by Anon
 				ret_data.append(t)
 				meta.append(add)
 				continue
