@@ -60,7 +60,8 @@ python biases_calculation_huggingfacehub_PPL.py \
 --list_countries France United_Kingdom Ireland Spain Germany Italy Morocco \
 India Canada Australia New_Zealand United_States South_Africa \
 Portugal Hungary Poland Turkey \
---n_duplicates 50
+--n_duplicates 50 \
+--model_name cardiffnlp/twitter-xlm-roberta-base-sentiment
 ```
 
 Then you should run the PPL_Positivity.py script to calculate the PPL over the base model:
@@ -68,9 +69,7 @@ Then you should run the PPL_Positivity.py script to calculate the PPL over the b
 python PPL_Positivity.py \
 --name_corpora PPL_Positivity \
 --data_tsv labeled_data.tsv \
---model_name cardiffnlp/twitter-xlm-roberta-base \
---list_gender male \
---verbose
+--model_name cardiffnlp/twitter-xlm-roberta-base
 ```
 
 Finally you can visualize the results using the given notebooks in the repo.
