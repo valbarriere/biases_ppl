@@ -73,3 +73,19 @@ python PPL_Positivity.py \
 ```
 
 Finally you can visualize the results using the given notebooks in the repo.
+
+In order to calculate the global-level correlation between perplexity and classes outputs on raw sentences (creating Table 2 of the Paper):
+```bash
+python generate_table2.py \
+--input_data_file one_language_data.tsv \
+--list_model_name_PPL cardiffnlp/twitter-roberta-base cardiffnlp/twitter-xlm-roberta-base \
+--list_model_name_task cardiffnlp/twitter-xlm-roberta-base-sentiment cardiffnlp/twitter-roberta-base-hate
+```
+
+In order to calculate the local-level correlation between perplexity and classes outputs on perturbated sentences (creating Table 3 of the Paper):
+```bash
+python generate_table3.py \
+--data_tsv labeled_data.tsv \
+--model_name cardiffnlp/twitter-xlm-roberta-base-sentiment \
+--model_name_PT cardiffnlp/twitter-xlm-roberta-base
+```
