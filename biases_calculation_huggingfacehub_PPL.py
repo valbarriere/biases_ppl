@@ -9,7 +9,7 @@ Soit je compare les changements par rapport aux predictions d'avant, en calculan
 Use it like:
 python biases_calculation_huggingfacehub_PPL.py \
 --name_corpora PPL_Positivity \
---data_tsv labeled_tweets_data.tsv \
+--data_tsv labeled_data.tsv \
 --list_countries France United_Kingdom Ireland Spain Germany Italy Morocco \
 India Canada Australia New_Zealand United_States South_Africa \
 Portugal Hungary Poland Turkey \

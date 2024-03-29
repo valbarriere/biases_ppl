@@ -4,7 +4,7 @@ Script to measure the PPL of a model. To use on a (M)LM, not on a classifier!
 Use it like: 
 python ../PPL_Positivity.py \
 --name_corpora PPL_Positivity \
---data_tsv labeled_tweets_data.tsv \
+--data_tsv labeled_data.tsv \
 --model_name cardiffnlp/twitter-xlm-roberta-base \
 --list_gender male \
 --verbose
