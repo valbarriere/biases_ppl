@@ -49,7 +49,29 @@ To run the experiments we use an entity recognition model. Download it using the
 python -m spacy download xx_ent_wiki_sm
 ```
 
+### Example data from XLM-T
+
+To run the experiments, get the data from XLM-T repository by cloning it:
+
+`git clone git@github.com:cardiffnlp/xlm-t.git`
+
 ## Run the experiments
+
+### Without perplexity
+
+To perturb the data and calculate the bias without calculating perplexity, run:
+
+```bash
+python biases_calculation_huggingfacehub.py \
+--data_path data/Biases \
+--data_tsv BounTi_Turkish_sentiment_all.tsv \
+--text_col tweet \
+--label_col label \
+--label_type str \
+--data_type tsv
+```
+
+### Using perplexity
 
 First you should run the biases_calculation_huggingfacehub_PPL.py script to perturb the data and calculate the biases and probas using the task finetuned model:
 
