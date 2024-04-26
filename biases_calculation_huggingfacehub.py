@@ -20,11 +20,14 @@ from scipy.special import softmax
 from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
 from transformers import AutoConfig, AutoTokenizer, TFAutoModelForSequenceClassification
+from dotenv import load_dotenv
 
 from CountryGenderNamePerturbation import PerturbedExamples
 
+
+load_dotenv()
 CACHE_DIR = os.getenv("CACHE_DIR", None)
-DATA_PATH = os.getenv("DATA_PATH", "xlm-t/data/sentiment/english")
+PATH_DATA = os.getenv("PATH_DATA", None)
 proxies = None
 
 
@@ -554,113 +557,67 @@ def _calculate_sentiment_bias(
 def check_file_exists_while_parsing(file_path):
     if not os.path.exists(file_path):
         raise argparse.ArgumentTypeError(f"{file_path} does not exist")
-    return file_path
-
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Receives arguments to run biases calculation over defined datasets."
-    )
-    parser.add_argument(
-        "--model_name",
-        type=str,
-        help="Name of the model to run",
-        default="cardiffnlp/twitter-xlm-roberta-base-sentiment",
-    )
-    parser.add_argument(
-        "--data_path", 
-        type=str,
-        help="Path where data is stored",
-        default=DATA_PATH
-    )
-    parser.add_argument(
-        "--data_type",
-        type=str,
-        choices=["txt", "tsv"],
-        help="Type of data (txt or tsv)",
-        default="txt",
-    )
-    parser.add_argument(
-        "--data_tsv",
-        type=str,
-        help="File containing the data (required if data_type is tsv)",
-    )
-    parser.add_argument(
-        "--text_col",
-        type=str,
-        help="Column containing the text data in the tsv file (required if data_type is tsv)",
-    )
-    parser.add_argument(
-        "--label_col",
-        type=str,
-        help="Column containing the label data in the tsv file (required if data_type is tsv)",
-    )
-    parser.add_argument(
-        "--text_file",
-        type=str,
-        help="File containing the text data (required if data_type is txt)",
-        default="test_text.txt",
-    )
-    parser.add_argument(
-        "--label_file",
-        type=str,
-        help="File containing the label data (required if data_type is txt)",
-        default="test_labels.txt",
-    )
-    parser.add_argument(
-        "--label_type",
-        type=str,
-        choices=["str", "int"],
-        help="Type of labels (str or int)",
-        default="int",
-    )
-    parser.add_argument(
-        "--list_countries",
-        help="countries to test",
-        type=str,
-        default=["United_Kingdom", "France", "Spain", "Germany"],
-        nargs="+",
-    )
-    parser.add_argument(
-        "--n_duplicates", help="how many n_duplicates", type=int, default=10
-    )
-    parser.add_argument("--test", help="test", default=False, action="store_true")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--model_name",
+                        help="The name of the model name", 
+                        type=str, 
+                        default="cardiffnlp/twitter-xlm-roberta-base-sentiment", 
+                 )
+    parser.add_argument("-c", "--name_corpora", 
+                        help="The name of the folder containing the corpora", 
+                        type=str, 
+                        default="Biases")
+    parser.add_argument("--path_corpora", 
+                        help="The path of the folders containing all the corpora", 
+                        type=str, 
+                        default=PATH_DATA)
+    parser.add_argument("--data_tsv", 
+                        type=str, 
+                        default="tweets_test_spanish_val.tsv")
+    parser.add_argument("--text_col",
+                        type=str,
+                        help="Column containing the text data in the tsv file",
+                        default="tweet")
+    parser.add_argument("--label_col",
+                        type=str,
+                        help="Column containing the label data in the tsv file",
+                        default="label")
+    parser.add_argument("--label_type",
+                        type=str,
+                        choices=["str", "int"],
+                        help="Type of labels (str or int)",
+                        default="str",)
+    parser.add_argument("--list_countries", 
+                        help="countries to test", 
+                        type=str, 
+                        default=['United_Kingdom', "France", 'Spain', 'Germany'], 
+                        nargs='+')
+    parser.add_argument("--n_duplicates", 
+                        help="how many n_duplicates", 
+                        type=int, 
+                        default=10)
+    parser.add_argument("--test", 
+                        help="test", 
+                        default=False, 
+                        action='store_true')
     args = parser.parse_args()
-    if args.data_type == "tsv":
-        if not (args.data_tsv and args.text_col and args.label_col):
-            parser.error(
-                "When data_type is tsv, data_tsv, text_col, and label_col are required."
-            )
-        data_tsv_path = os.path.join(args.data_path, args.data_tsv)
-        args.data_tsv = check_file_exists_while_parsing(data_tsv_path)
-    else:
-        if not (args.text_file and args.label_file):
-            parser.error(
-                "When data_type is txt, text_file and label_file are required."
-            )
-        text_file_path = os.path.join(args.data_path, args.text_file)
-        args.text_file = check_file_exists_while_parsing(text_file_path)
-        label_file_path = os.path.join(args.data_path, args.label_file)
-        args.label_file = check_file_exists_while_parsing(label_file_path)
+    input_data_file = args.data_tsv
+    path_corpus = os.path.join(args.path_corpora, args.name_corpora)
+    data_file_path = os.path.join(path_corpus, input_data_file)
+    check_file_exists_while_parsing(data_file_path)
     return args
-
 
 def main(args):
     model_name = args.model_name
-
+    path_corpus = os.path.join(args.path_corpora, args.name_corpora)
+    input_data_file = args.data_tsv
+    tsv_path = os.path.join(path_corpus, input_data_file)
+    text_col = args.text_col
+    label_col = args.label_col
     model, tokenizer, config = get_model_tokenizer_and_config(model_name)
-
-    data_path = args.data_path
-    data_type = args.data_type
-    if data_type == "txt":
-        text_path = args.text_file
-        label_path = args.label_file
-        df = read_text_data_to_df(text_path, label_path)
-    else:
-        tsv_path = args.data_tsv
-        text_col = args.text_col
-        label_col = args.label_col
-        df = read_tsv_data_to_df(tsv_path, text_col, label_col)
+    df = read_tsv_data_to_df(tsv_path, text_col, label_col)
 
     label_type = args.label_type
     dict_lab = {k.lower(): v for k, v in config.label2id.items()}
@@ -679,14 +636,14 @@ def main(args):
         y,
         tokenizer,
         dict_lab,
-        data_path,
+        path_corpus,
         list_countries=args.list_countries,
         n_duplicates=args.n_duplicates,
     )
     if args.test:
         print(df_bias)
     else:
-        df_bias.to_csv(os.path.join(data_path, "biases.tsv"), sep="\t")
+        df_bias.to_csv(os.path.join(path_corpus, f"biases_{input_data_file}"), sep="\t")
 
 
 if __name__ == "__main__":
