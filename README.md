@@ -49,12 +49,6 @@ To run the experiments we use an entity recognition model. Download it using the
 python -m spacy download xx_ent_wiki_sm
 ```
 
-### Example data from XLM-T
-
-To run the experiments, get the data from XLM-T repository by cloning it:
-
-`git clone git@github.com:cardiffnlp/xlm-t.git`
-
 ## Run the experiments
 
 ### Without perplexity
@@ -63,12 +57,12 @@ To perturb the data and calculate the bias without calculating perplexity, run:
 
 ```bash
 python biases_calculation_huggingfacehub.py \
---data_path /path/to/data \
---data_tsv data.tsv \
---text_col tweet \
---label_col label \
---label_type str \
---data_type tsv
+--name_corpora no_PPL \
+--data_tsv labeled_data.tsv \
+--list_countries France United_Kingdom Ireland Spain Germany Italy Morocco \
+India Canada Australia New_Zealand United_States South_Africa \
+--n_duplicates 50 \
+--model_name cardiffnlp/twitter-xlm-roberta-base-sentiment
 ```
 
 ### Using perplexity
