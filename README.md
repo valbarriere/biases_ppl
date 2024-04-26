@@ -63,8 +63,8 @@ To perturb the data and calculate the bias without calculating perplexity, run:
 
 ```bash
 python biases_calculation_huggingfacehub.py \
---data_path data/Biases \
---data_tsv BounTi_Turkish_sentiment_all.tsv \
+--data_path /path/to/data \
+--data_tsv data.tsv \
 --text_col tweet \
 --label_col label \
 --label_type str \

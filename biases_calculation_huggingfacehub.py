@@ -568,7 +568,10 @@ def parse_arguments():
         default="cardiffnlp/twitter-xlm-roberta-base-sentiment",
     )
     parser.add_argument(
-        "--data_path", type=str, help="Path where data is stored", default=DATA_PATH
+        "--data_path", 
+        type=str,
+        help="Path where data is stored",
+        default=DATA_PATH
     )
     parser.add_argument(
         "--data_type",
@@ -680,10 +683,10 @@ def main(args):
         list_countries=args.list_countries,
         n_duplicates=args.n_duplicates,
     )
-    if not args.test:
-        df_bias.to_csv(os.path.join(data_path, "biases.tsv"), sep="\t")
-    else:
+    if args.test:
         print(df_bias)
+    else:
+        df_bias.to_csv(os.path.join(data_path, "biases.tsv"), sep="\t")
 
 
 if __name__ == "__main__":
