@@ -51,6 +51,22 @@ python -m spacy download xx_ent_wiki_sm
 
 ## Run the experiments
 
+### Without perplexity
+
+To perturb the data and calculate the bias without calculating perplexity, run:
+
+```bash
+python biases_calculation_huggingfacehub.py \
+--name_corpora no_PPL \
+--data_tsv labeled_data.tsv \
+--list_countries France United_Kingdom Spain Germany Italy Morocco \
+Portugal Hungary Poland Turkey \
+--n_duplicates 50 \
+--model_name cardiffnlp/twitter-xlm-roberta-base-sentiment
+```
+
+### Using perplexity
+
 First you should run the biases_calculation_huggingfacehub_PPL.py script to perturb the data and calculate the biases and probas using the task finetuned model:
 
 ```bash
