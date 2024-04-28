@@ -59,8 +59,8 @@ To perturb the data and calculate the bias without calculating perplexity, run:
 python biases_calculation_huggingfacehub.py \
 --name_corpora no_PPL \
 --data_tsv labeled_data.tsv \
---list_countries France United_Kingdom Ireland Spain Germany Italy Morocco \
-India Canada Australia New_Zealand United_States South_Africa \
+--list_countries France United_Kingdom Spain Germany Italy Morocco \
+Portugal Hungary Poland Turkey \
 --n_duplicates 50 \
 --model_name cardiffnlp/twitter-xlm-roberta-base-sentiment
 ```
