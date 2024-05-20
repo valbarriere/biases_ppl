@@ -88,8 +88,9 @@ def main(args):
     if args.test:
         print(df_bias)
     else:
-        df_bias.to_csv(os.path.join(path_corpus, f"biases_{args.data_tsv}"), sep="\t")
-
+        output_path = os.path.join(path_corpus, f"biases_{args.data_tsv}")
+        df_bias.to_csv(output_path, sep="\t")
+        print(f"Data written to {output_path}")
 
 if __name__ == "__main__":
     args = parse_arguments()
