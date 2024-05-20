@@ -49,6 +49,14 @@ To run the experiments we use an entity recognition model. Download it using the
 python -m spacy download xx_ent_wiki_sm
 ```
 
+### XLM-T data
+
+We use the tweets available in the repository of XLM-T. Clone the repo and generate the data in tsv format:
+```
+git clone git@github.com:cardiffnlp/xlm-t.git
+python build_xlmt_tsv_data.py
+```
+
 ## Run the experiments
 
 ### Without perplexity
