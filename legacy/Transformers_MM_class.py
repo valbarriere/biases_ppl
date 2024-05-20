@@ -1256,7 +1256,7 @@ if __name__ == "__main__":
     #################################### Bias only ####################################
 
     if args.calculate_sentiment_bias:
-        from biases_calculation_huggingfacehub import calculate_sentiment_bias
+        from legacy.biases_calculation_huggingfacehub import calculate_sentiment_bias
         list_files_to_test = args.test_set
         tokenizer.not_use_token_type_ids = False
         for input_data_File in list_files_to_test:
