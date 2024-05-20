@@ -211,3 +211,28 @@ def loadTsvData(inputTsvFile, dict_lab={'positive':0, 'negative':1, 'else':2}, e
 
         if verbose: print('Load "{}", {} samples, {} labels'.format(inputTsvFile.split('/')[-1], len(train_tweets), len(train_y)))
     return (train_tweets, train_y)
+
+def _kl_div(P, Q, mean_of_divs=True):
+    """
+    2 options: mean of the KL on each example or mean of the probabilities and KL global
+    """
+    P = np.array(P)
+    Q = np.array(Q)
+
+    # mean of the divs
+    if mean_of_divs:
+        kl = np.mean(np.sum((P * np.log(P / Q)), axis=1))
+    else:
+        # div of the means
+        P = np.mean(P, axis=1)
+        Q = np.mean(Q, axis=1)
+        kl = np.sum((P * np.log(P / Q)))
+
+    return kl
+
+
+def symetric_kl(P, Q, mean_of_divs=True):
+    return (
+        _kl_div(P, Q, mean_of_divs=mean_of_divs)
+        + _kl_div(Q, P, mean_of_divs=mean_of_divs)
+    ) / 2
