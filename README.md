@@ -52,7 +52,8 @@ python -m spacy download xx_ent_wiki_sm
 ### XLM-T data
 
 We use the tweets available in the repository of XLM-T. Clone the repo and generate the data in tsv format:
-```
+
+```bash
 git clone git@github.com:cardiffnlp/xlm-t.git
 python build_xlmt_tsv_data.py
 ```
@@ -64,14 +65,25 @@ python build_xlmt_tsv_data.py
 To perturb the data and calculate the bias without calculating perplexity, run:
 
 ```bash
-python biases_calculation_huggingfacehub.py \
---name_corpora no_PPL \
---data_tsv labeled_data.tsv \
+python biases_calculation.py \
+--name_corpora tsv_data_xlmt \
+--data_tsv tweets_test_english.tsv \
+--label_type int \
 --list_countries France United_Kingdom Spain Germany Italy Morocco \
 Portugal Hungary Poland Turkey \
 --n_duplicates 50 \
 --model_name cardiffnlp/twitter-xlm-roberta-base-sentiment
 ```
+
+This command will create a new file inside the input folder with "biases" as prefix. In the example, the new file will be "biases_tweets_test_english.tsv".
+
+After running the biases calculation over the tweets, you can build the confusion matrix for the data using the following command:
+
+```bash
+python build_confusion_matrix.py tsv_data_xlmt "biases_tweets_test_{}.tsv"
+```
+
+Where the first argument is the folder containing the biases calculation and the second argument is the pattern of the file names
 
 ### Using perplexity
 
