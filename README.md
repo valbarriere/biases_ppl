@@ -83,7 +83,7 @@ After running the biases calculation over the tweets, you can build the confusio
 python build_confusion_matrix.py tsv_data_xlmt "biases_tweets_test_{}.tsv"
 ```
 
-Where the first argument is the folder containing the biases calculation and the second argument is the pattern of the file names
+Where the first argument is the folder containing the biases calculation and the second argument is the pattern of the biases file names
 
 ### Using perplexity
 
