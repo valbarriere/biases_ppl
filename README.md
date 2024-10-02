@@ -1,4 +1,7 @@
 # Biases PPL
+This repository contains the source code for:
+
+A Study of Nationality Bias in Names and Perplexity using Off-the-Shelf Affect-related Tweet Classifiers
 
 ## Requirements
 
@@ -48,6 +51,17 @@ To run the experiments we use an entity recognition model. Download it using the
 ```bash
 python -m spacy download xx_ent_wiki_sm
 ```
+
+### Tweet labeller using vLLM
+
+To run the experiments, we provide a sample of tweets. These tweets can be labelled using the script `tag_tweets_vllm.py` as follows:
+
+```bash
+python tag_tweets_vllm.py -f sample_tweets.tsv \
+-m meta-llama/Meta-Llama-3-8B-Instruct \
+-t sentiment
+```
+Note that you should require GPU for certain models
 
 ## Run the experiments
 
