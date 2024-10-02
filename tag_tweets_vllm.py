@@ -136,7 +136,7 @@ def annotate_file(model_id, task, file_path):
 
     tweets_df["label"] = responses
     
-    file_name = f"{file_path}-{model_name}_labeled"
+    file_name = f"{file_path.split(".")[0]}-{model_name}_labeled.tsv"
 
     tweets_df.to_csv(file_name, sep="\t") 
     print(f"Data stored in {file_name}")
