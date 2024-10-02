@@ -61,7 +61,7 @@ python tag_tweets_vllm.py -f sample_tweets.tsv \
 -m meta-llama/Meta-Llama-3-8B-Instruct \
 -t sentiment
 ```
-Note that you should require GPU for certain models
+Note that GPU computing may be required for use of certain models
 
 ## Run the experiments
 
