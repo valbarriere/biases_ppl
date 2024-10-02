@@ -11,8 +11,6 @@ load_dotenv()
 
 CONTENT_SYSTEM = "You are a helpful and honest assistant. Please, respond concisely and truthfully."
 CACHE_DIR = os.getenv("CACHE_DIR", None)
-BOOL_TEST=True
-
 
 
 def get_task_and_tweet_template_from_task(task_to_label):
@@ -127,7 +125,6 @@ def annotate_file(model_id, task, file_path):
     outputs = llm.generate(
         prompts = prompts,
         sampling_params=sampling_params,
-        use_tqdm=BOOL_TEST,
     )
     
     responses = [opt.outputs[0].text for opt in outputs]
