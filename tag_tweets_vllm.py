@@ -1,14 +1,11 @@
 import os
-import sys
 import time
 import argparse
-import torch
 import pickle as pkl
 from transformers import AutoTokenizer
 from dotenv import load_dotenv
-from huggingface_hub import login
 from vllm import LLM, SamplingParams
-
+from utils import read_csv_val
 load_dotenv()
 
 
@@ -22,17 +19,14 @@ def get_task_and_tweet_template_from_task(task_to_label):
     if task_to_label == 'sentiment':
         task = "sentiment"
         label_str = "’positive’, ’neutral’ or ’negative’"
-        tweet = "Well when you have a welfare state that propagates an underclass of unskilled parasites"
         task_str = "Sentiment"
     else:
         task = "degree of toxicity"
         label_str = "’not toxic’, ’slightly toxic’, ’moderately toxic’, ’very toxic’ or ’extremely toxic’"
-        tweet = "Well when you have a welfare state that propagates an underclass of unskilled parasites"
         task_str = "Toxicity"
     template_dict =  {
         "task":task,
         "label_str": label_str,
-        "tweet": tweet,
         "task_str": task_str
     }
     return template_dict
@@ -116,57 +110,43 @@ def annotate_file(model_id, task, file_path):
     tokenizer.pad_token = tokenizer.eos_token
 
     template_dict = get_task_and_tweet_template_from_task(task)
-    with open(file_path, 'rb') as f:
-        dic_perturb = pkl.load(f)
+    tweets_df = read_csv_val(file_path)
 
     llm = LLM(model=model_id,
             dtype="float16",
             download_dir=CACHE_DIR,
             )
-
-    for country in dic_perturb.keys():
-        
-        # get the (perturbated) texts 
-        if country != 'Original':
-            list_tweets = dic_perturb[country]['male'][0]
-        else:
-            list_tweets = dic_perturb[country][0]
-            
-        if BOOL_TEST:
-            list_tweets=list_tweets[:1024]
-            
+    
+    list_tweets = tweets_df["tweet"].fillna("CVxTz").values
+    t = time.time()
+    responses = []
+    
+    prompts = create_input_ids(list_tweets, tokenizer, template_dict, return_text_prompts=True)
 
 
-        t = time.time()
-        responses = []
-        
-        prompts = create_input_ids(list_tweets, tokenizer, template_dict, return_text_prompts=True)
+    outputs = llm.generate(
+        prompts = prompts,
+        sampling_params=sampling_params,
+        use_tqdm=BOOL_TEST,
+    )
+    
+    responses = [opt.outputs[0].text for opt in outputs]
+    
+    print("Labelling done: %d examples in %.2f minutes"%(len(list_tweets), (time.time()-t)/60.))
 
+    tweets_df["label"] = responses
+    
+    file_name = f"{file_path}-{model_name}_labeled"
 
-        outputs = llm.generate(
-            prompts = prompts,
-            sampling_params=sampling_params,
-            use_tqdm=BOOL_TEST,
-        )
-        
-        for output in outputs:
-            # prompt = output.prompt
-            generated_text = output.outputs[0].text
-            responses.append(generated_text)
-        
-        print("%s done: %d examples in %.2f minutes"%(country, len(list_tweets), (time.time()-t)/60.))
-        
-        with open(f"{file_path}-{model_name}_{country}_male", 'wb') as f:
-            pkl.dump(responses, f)
-
-
+    tweets_df.to_csv(file_name, sep="\t") 
+    print(f"Data stored in {file_name}")
 
 def main():
     parser = argparse.ArgumentParser(description="Annotator for sentiment or toxicity tasks")
 
     parser.add_argument('-m', '--model_id', type=str, required=True, help="Name of the HF model to use as annotator.")
     parser.add_argument('-t', '--task', type=str, required=True, choices=["sentiment", "toxic"], help="Annotation task to be done (sentiment or toxic)")
-    parser.add_argument('-f', '--file_path', type=str, required=True, help="Path to the input file to be annotated. The file should be a pickle file generated after perturbating the inputs.")
+    parser.add_argument('-f', '--file_path', type=str, required=True, help="Path to the input file to be annotated. A tsv file is expected with a tweet column")
 
     args = parser.parse_args()
 
