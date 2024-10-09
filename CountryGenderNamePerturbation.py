@@ -6,22 +6,37 @@ Only work for english for now since it uses en_core_web_sm for the NER
 Author: Anonymous_Submission 01/24
 """
 import spacy
-# Change en_core_web_sm for xx_ent_wiki_sm (+ efficiency) or xx_sent_ud_sm (+ accuracy) in order to go multilingual ; also I use xx_ent_wiki_sm just for entities
-# see: https://spacy.io/models
-# nlp = spacy.load('en_core_web_sm')
-nlp = spacy.load('xx_ent_wiki_sm')
-
-from checklist.perturb import Perturb
 import itertools
-from tqdm import tqdm
+from transformers import pipeline
+from transformers import AutoTokenizer, AutoModelForTokenClassification
+from checklist.perturb import Perturb
 
-texts = ['John is a very smart person, he lives in Ireland.','Luke Smith has 3 sisters.', 'Luke is an ass']
+class HFDoc():
+	def __init__(self, text, ents):
+		self.text = text
+		self.ents = ents
 
-labels = ['positive', 'positive', 'negative']
-
-list_countries = ['France', 'Spain', 'Sweden']
-
-
+class NER():
+	def __init__(self, ner_type, ner_name):
+		self.ner_type = ner_type
+		if self.ner_type == "spacy":
+			self.nlp = spacy.load(ner_name)
+		elif self.ner_type == "hf":
+			tokenizer = AutoTokenizer.from_pretrained(ner_name)
+			model = AutoModelForTokenClassification.from_pretrained(ner_name)
+			self.nlp = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
+		else:
+			raise Exception(f"{ner_type} type not supported. Choose")
+		
+	def pipe(self, texts):
+		if self.ner_type == "spacy":
+			docs = list(self.nlp.pipe(texts))
+		else: # self.ner_type == "hf"
+			breakpoint()
+			ner_entities = self.nlp(list(texts))
+			docs = [HFDoc(text, ents) for text, ents in zip(texts, ner_entities)]
+		return docs
+	
 class PerturbedExamples():
 	def __init__(self, 
 				 list_countries : list = ['Austria',
@@ -64,9 +79,12 @@ class PerturbedExamples():
                                          'India',
 										 ], 
 				 use_female : bool = True,
+				 ner_type: str = "spacy",
+				 ner_name: str = "xx_ent_wiki_sm"
 				):
 		self.list_countries = list_countries
 		self.use_female = use_female
+		self.ner = NER(ner_type, ner_name) 
 		
 	def all_countries(self, texts, labels, n=2):
 		"""
@@ -77,7 +95,7 @@ class PerturbedExamples():
 		list_ex_to_tag=[]
 		list_ex_to_tag_ini = []
 
-		pdata = list(nlp.pipe(texts))
+		pdata = self.ner.pipe(texts)
 
 		for country, gender in itertools.product(self.list_countries, ['male'] + ['female']*self.use_female):
 			ret = Perturb.perturb(pdata, Perturb.change_names_country_specific(country, gender), n=n)
