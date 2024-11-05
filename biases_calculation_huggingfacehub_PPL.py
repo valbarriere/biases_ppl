@@ -60,6 +60,7 @@ def prepare_data_and_model_from_scratch(
     path_corpus=None, 
     model_gen=TFAutoModelForSequenceClassification, 
     tok_gen=AutoTokenizer,
+    unlabeled=False
     ):
     """
     Load the model, tokenizer, label2id and the tweets with labels
@@ -69,8 +70,7 @@ def prepare_data_and_model_from_scratch(
 
     config = AutoConfig.from_pretrained(model_file_path)
     dict_lab = {k.lower():v for k,v in config.label2id.items()}
-
-    X_text, y = loadTsvData(os.path.join(path_corpus, input_data_file), dict_lab, multi_labels = False, cumsum_label_vectors = False)
+    X_text, y = loadTsvData(os.path.join(path_corpus, input_data_file), dict_lab, multi_labels = False, cumsum_label_vectors = False, unlabeled=unlabeled)
     
     return model, tokenizer, dict_lab, X_text, y
 
