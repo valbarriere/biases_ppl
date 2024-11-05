@@ -32,7 +32,6 @@ class NER():
 		if self.ner_type == "spacy":
 			docs = list(self.nlp.pipe(texts))
 		else: # self.ner_type == "hf"
-			breakpoint()
 			ner_entities = self.nlp(list(texts))
 			docs = [HFDoc(text, ents) for text, ents in zip(texts, ner_entities)]
 		return docs
