@@ -27,7 +27,10 @@ from transformers import AutoTokenizer, AutoModelForMaskedLM, AutoConfig
 from tqdm import tqdm
 
 from scipy.stats import pearsonr
+from dotenv import load_dotenv
 
+
+load_dotenv()
 CACHE_DIR = os.getenv("CACHE_DIR", None)
 PATH_DATA = os.getenv("PATH_DATA", None)
 

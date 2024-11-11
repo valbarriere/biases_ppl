@@ -11,17 +11,22 @@ Allows to create the Table 3 of the ACL24 paper
 
 Author: Anonymous_Submission 01/24
 """
+import os
 import pickle as pkl
 import numpy as np
 from scipy.stats import pearsonr
 import argparse 
 import pandas as pd
 from transformers import AutoConfig
+from dotenv import load_dotenv
+
 
 import warnings
 warnings.filterwarnings("ignore")
 
-PATH_DATA = './'
+load_dotenv()
+PATH_DATA = os.getenv("PATH_DATA", None)
+
 
 from sklearn.preprocessing import StandardScaler
 def rescale(l):
@@ -45,7 +50,6 @@ if __name__ == '__main__':
     parser.add_argument("--male_only", help="male only", default=True, type=bool)
     args = parser.parse_args()
     
-    # name_file = 'Perturbed_tweets_test_english_val.tsv'
     name_file = args.data_tsv
     model_name = args.model_name.replace('/', '_')
     model_name_PT = args.model_name_PT.replace('/', '_')
