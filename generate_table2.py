@@ -65,20 +65,8 @@ def return_label2idx(modelFilePath):
         label2idx = {'negative': 0, 'neutral': 1, 'positive': 2}
 
     return label2idx
-    
-if __name__ == '__main__':
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--path_corpus", help="The path of the folders containing the data", type=str, 
-                        default=PATH_DATA)
-    parser.add_argument("--input_data_file", type=str, default="one_language_data.tsv")
-    parser.add_argument("--list_model_name_PPL", help="countries to test, todo", type=str, default=['cardiffnlp/twitter-xlm-roberta-base', 
-        'cardiffnlp/twitter-roberta-base'], nargs='+')
-    parser.add_argument("--list_model_name_task", help="countries to test, todo", type=str, default=['cardiffnlp/twitter-xlm-roberta-base-sentiment',
-        'cardiffnlp/twitter-roberta-base-hate'], nargs='+')
-    parser.add_argument("--verbose", help="verbose", default=False, action='store_true')
-    args = parser.parse_args()
 
+def main_global_level(args):
     ######################## Init ########################  
 
     list_model_name_PPL = args.list_model_name_PPL
@@ -147,4 +135,21 @@ if __name__ == '__main__':
 
     df = [[pearson_dic[task][lan] for lan in pearson_dic[task].keys()] for task in probaini.keys()]
     df = pd.DataFrame(df, index=[task.replace('/', '_') for task in list_model_name_task])
-    df.to_csv(path_corpus + '%s/Table2_Correlations_PPL_%s'%(model_name, input_data_file)+ '.tsv', sep='\t')
+    output_path = path_corpus + '%s/Table2_Correlations_PPL_%s'%(model_name, input_data_file)+ '.tsv'
+    df.to_csv(output_path, sep='\t')
+    print("Global correlation data written to {output_path}")
+    
+if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path_corpus", help="The path of the folders containing the data", type=str, 
+                        default=PATH_DATA)
+    parser.add_argument("--input_data_file", type=str, default="one_language_data.tsv")
+    parser.add_argument("--list_model_name_PPL", help="countries to test, todo", type=str, default=['cardiffnlp/twitter-xlm-roberta-base', 
+        'cardiffnlp/twitter-roberta-base'], nargs='+')
+    parser.add_argument("--list_model_name_task", help="countries to test, todo", type=str, default=['cardiffnlp/twitter-xlm-roberta-base-sentiment',
+        'cardiffnlp/twitter-roberta-base-hate'], nargs='+')
+    parser.add_argument("--verbose", help="verbose", default=False, action='store_true')
+    args = parser.parse_args()
+    main_global_level(args)
+    

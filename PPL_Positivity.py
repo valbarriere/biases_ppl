@@ -40,23 +40,7 @@ def score(model, tokenizer, sentence):
             loss = model(masked_input, labels=labels).loss
     return loss
     
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model_name", help="The name of the model", type=str, default="cardiffnlp/twitter-xlm-roberta-base")
-    parser.add_argument("-c", "--name_corpora", help="The name of the folder containing the corpora", type=str, 
-                        default="Biases")
-    parser.add_argument("--path_corpora", help="The path of the folders containing all the corpora", type=str, 
-                        default=PATH_DATA)
-    parser.add_argument("--data_tsv", type=str, help="The tsv file containing the data", default="tweets_test_spanish_val.tsv")
-    parser.add_argument("--list_countries", help="Countries to test", type=str, default=[], nargs='+')
-    parser.add_argument("--list_gender", help="Gender to test", type=str, default=[], nargs='+')
-    parser.add_argument("--n_duplicates", help="How many n_duplicates", type=int, default=10)
-    parser.add_argument("--verbose", help="verbose", default=False, action='store_true')
-    parser.add_argument("--existing_dic", help="If already started experiments before", action=argparse.BooleanOptionalAction)
-    parser.add_argument("--use_existing_dic", help="if already started experiments before", default=True)
-                       
-    
-    args = parser.parse_args()
+def main_ppl(args):
     use_existing_dic = args.existing_dic
     path_data = os.path.join(args.path_corpora, args.name_corpora)
 
@@ -112,3 +96,23 @@ if __name__ == '__main__':
         pkl.dump(list_PPL, f)
 
     os.remove(path_dump_perturbed_ppl + '_PPL_buff.pkl')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--model_name", help="The name of the model", type=str, default="cardiffnlp/twitter-xlm-roberta-base")
+    parser.add_argument("-c", "--name_corpora", help="The name of the folder containing the corpora", type=str, 
+                        default="Biases")
+    parser.add_argument("--path_corpora", help="The path of the folders containing all the corpora", type=str, 
+                        default=PATH_DATA)
+    parser.add_argument("--data_tsv", type=str, help="The tsv file containing the data", default="tweets_test_spanish_val.tsv")
+    parser.add_argument("--list_countries", help="Countries to test", type=str, default=[], nargs='+')
+    parser.add_argument("--list_gender", help="Gender to test", type=str, default=[], nargs='+')
+    parser.add_argument("--n_duplicates", help="How many n_duplicates", type=int, default=10)
+    parser.add_argument("--verbose", help="verbose", default=False, action='store_true')
+    parser.add_argument("--existing_dic", help="If already started experiments before", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--use_existing_dic", help="if already started experiments before", default=True)
+                       
+    
+    args = parser.parse_args()
+    main_ppl(args)

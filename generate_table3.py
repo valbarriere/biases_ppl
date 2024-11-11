@@ -29,27 +29,13 @@ PATH_DATA = os.getenv("PATH_DATA", None)
 
 
 from sklearn.preprocessing import StandardScaler
+
 def rescale(l):
     scaler = StandardScaler()
     return [kk for ll in scaler.fit_transform([[k] for k in l]) for kk in ll]
 
-if __name__ == '__main__':
+def main_local_level(args):
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model_name", help="The name of the model name", type=str, default="cardiffnlp/twitter-xlm-roberta-base-sentiment", 
-                 )
-    parser.add_argument("--model_name_PT", help="The name of the pre-trained model name (if different)", type=str, default="cardiffnlp/twitter-xlm-roberta-base", 
-                 )
-    parser.add_argument("--path_corpora", help="The path of the folders containing all the corpora", type=str, 
-                        default=PATH_DATA)
-    parser.add_argument("--data_tsv", type=str, default="Eurotweets_English_val_without_line_return.tsv_clean_test")
-    parser.add_argument("--list_countries", help="countries to test, todo", type=str, default=['United_Kingdom', 'Ireland', 'United_States', 'Canada', 'Australia', 'New_Zealand', 
-    'South_Africa', 'India', 'Germany', 'France', 'Spain', 'Italy', 'Portugal', 'Hungary', 'Poland', 'Turkey', 'Morocco'], nargs='+')
-    parser.add_argument("--proba_only", help="Proba only", default=False, action='store_true')
-    parser.add_argument("--verbose", help="verbose", default=False, action='store_true')
-    parser.add_argument("--male_only", help="male only", default=True, type=bool)
-    args = parser.parse_args()
-    
     name_file = args.data_tsv
     model_name = args.model_name.replace('/', '_')
     model_name_PT = args.model_name_PT.replace('/', '_')
@@ -119,4 +105,24 @@ if __name__ == '__main__':
             list_df.append((proba_string, 'Overall', gender, np.round(100*cor, 2)))
 
     df = pd.DataFrame(list_df[1:], columns=list_df[0])
-    df.to_csv(args.path_corpora + '%s/Table3_Correlations_PPL_%s'%(model_name, name_file)+ '.tsv', sep='\t', index=False)
+    output_path = args.path_corpora + '%s/Table3_Correlations_PPL_%s'%(model_name, name_file)+ '.tsv'
+    df.to_csv(output_path, sep='\t', index=False)
+    print(f"Local correlation data written to {output_path}")
+    
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--model_name", help="The name of the model name", type=str, default="cardiffnlp/twitter-xlm-roberta-base-sentiment", 
+                 )
+    parser.add_argument("--model_name_PT", help="The name of the pre-trained model name (if different)", type=str, default="cardiffnlp/twitter-xlm-roberta-base", 
+                 )
+    parser.add_argument("--path_corpora", help="The path of the folders containing all the corpora", type=str, 
+                        default=PATH_DATA)
+    parser.add_argument("--data_tsv", type=str, default="Eurotweets_English_val_without_line_return.tsv_clean_test")
+    parser.add_argument("--list_countries", help="countries to test, todo", type=str, default=['United_Kingdom', 'Ireland', 'United_States', 'Canada', 'Australia', 'New_Zealand', 
+    'South_Africa', 'India', 'Germany', 'France', 'Spain', 'Italy', 'Portugal', 'Hungary', 'Poland', 'Turkey', 'Morocco'], nargs='+')
+    parser.add_argument("--proba_only", help="Proba only", default=False, action='store_true')
+    parser.add_argument("--verbose", help="verbose", default=False, action='store_true')
+    parser.add_argument("--male_only", help="male only", default=True, type=bool)
+    args = parser.parse_args()
+    main_local_level(args)

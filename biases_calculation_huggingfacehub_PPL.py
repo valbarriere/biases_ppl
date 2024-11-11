@@ -271,6 +271,26 @@ def _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab, list_countr
     df_bias['n_sent_modified'] = nb_sent_modified
     return df_bias
 
+def main_probas(args):
+    model_file_path = args.model_name
+    path_corpus = os.path.join(args.path_corpora, args.name_corpora)
+    input_data_file = args.data_tsv
+
+    model, tokenizer, dict_lab, X_text, y = prepare_data_and_model_from_scratch(model_file_path, input_data_file, path_corpus, unlabeled=True)    
+
+    model_name_underscore = model_file_path.replace('/', '_')
+    df_bias = _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab,
+                                        list_countries=args.list_countries,
+                                        n_duplicates=args.n_duplicates,
+                                        path_dump_perturbed = os.path.join(path_corpus, f'Perturbed_{args.data_tsv}'),
+                                        model_name=model_name_underscore,
+                                        male_only=args.male_only,
+                                        emotion_task=False)
+    out_file_name = f'{model_name_underscore}biases_{input_data_file}.tsv'
+    output_path = os.path.join(path_corpus, out_file_name)
+    df_bias.to_csv(output_path, sep='\t')
+    print(f"Changes in probabilities and in percentage of examples data written to {output_path}")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -282,31 +302,11 @@ if __name__ == '__main__':
     parser.add_argument("--data_tsv", type=str, help="The tsv file containing the data", default="tweets_test_spanish_val.tsv")
     parser.add_argument("--list_countries", help="Countries to test", type=str, default=['United_Kingdom', "France", 'Spain', 'Germany'], nargs='+')
     parser.add_argument("--n_duplicates", help="How many n_duplicates", type=int, default=10)
-    parser.add_argument("--test", help="test", default=False, action='store_true')
     parser.add_argument("--proba_only", help="Calculate probability only", default=False, action='store_true')
     parser.add_argument("--male_only", help="Use male only", default=True, action='store_false')
     parser.add_argument("--perturb", help="Apply perturbation to data", default=True, action='store_false')
     parser.add_argument("--emotion_task", help="If the task is emotion classification", default=False, action='store_true')
     args = parser.parse_args()
+    main_probas(args)
 
-    model_file_path = args.model_name
-    path_corpus = os.path.join(args.path_corpora, args.name_corpora)
-    input_data_file = args.data_tsv
-
-    model, tokenizer, dict_lab, X_text, y = prepare_data_and_model_from_scratch(model_file_path, input_data_file, path_corpus)    
-
-    model_name_underscore = model_file_path.replace('/', '_')
-    if args.test:
-        X_text = X_text[:200]
-    df_bias = _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab,
-                                        list_countries=args.list_countries,
-                                        n_duplicates=args.n_duplicates,
-                                        path_dump_perturbed = os.path.join(path_corpus, f'Perturbed_{args.data_tsv}'),
-                                        model_name=model_name_underscore,
-                                        male_only=args.male_only,
-                                        emotion_task=False)
-    if args.test:
-        print(df_bias)
-    else:
-        out_file_name = f'{model_name_underscore}biases_{input_data_file}.tsv'
-        df_bias.to_csv(os.path.join(path_corpus, out_file_name), sep='\t')
+  
