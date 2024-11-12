@@ -54,7 +54,7 @@ cp public.env .env
 
 ### Entity Recognition Model
 
-To run the experiments we use an entity recognition model. Download it using the Spacy library:
+To run the experiments we use an entity recognition model. Download it using the Spacy library. Note you can also use one from `transformers`. 
 
 ```bash
 python -m spacy download xx_ent_wiki_sm
