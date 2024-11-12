@@ -12,7 +12,7 @@ def load_args_from_json(json_file):
     with open(json_file, 'r') as f:
         return json.load(f)
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="Path to JSON config file with arguments", type=str)
 
@@ -55,3 +55,7 @@ if __name__ == "__main__":
     main_ppl(args)
     # Calculate local correlation
     main_local_level(args)
+
+
+if __name__ == "__main__":
+    main()
