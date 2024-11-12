@@ -9,6 +9,8 @@
     "male_only": true,
     "perturb": true,
     "emotion_task": false,
+    "ner_type": "hf",
+    "ner_name": "dslim/bert-base-NER",
     "base_model_name": "cardiffnlp/twitter-xlm-roberta-base",
     "list_gender": [],
     "verbose": false,

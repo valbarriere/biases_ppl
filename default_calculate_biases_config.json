@@ -11,6 +11,8 @@
     "male_only": true,
     "perturb": true,
     "emotion_task": false,
+    "ner_type": "spacy",
+    "ner_name": "xx_ent_wiki_sm",
     "base_model_name": "cardiffnlp/twitter-xlm-roberta-base",
     "list_gender": [],
     "verbose": false,

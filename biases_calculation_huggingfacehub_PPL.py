@@ -143,7 +143,7 @@ def _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab, list_countr
                               path_dump_perturbed=None,
                               dict_pos_neg = {'positive' : ['yes', 'non-hate', 'non-offensive', 'joy'], 'negative' : ['no', 'hate', 'offensive', 'sadness']}, 
                               perturb=True,
-                              model_name='model', use_existing_dic=True, male_only=False, emotion_task=False):
+                              model_name='model', use_existing_dic=True, male_only=False, emotion_task=False, ner_type= "spacy", ner_name= "xx_ent_wiki_sm"):
     """
     The function itself, taking model, X_text, y as inputs
     """
@@ -151,7 +151,7 @@ def _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab, list_countr
     dict_lab, dict_lab_ini, str_pos, str_neg = create_dict_and_mapping_labels(dict_lab, dict_pos_neg, model_name)
 
     if perturb:
-        perturber = PerturbedExamples(list_countries) if len(list_countries) else PerturbedExamples()
+        perturber = PerturbedExamples(list_countries, ner_type=ner_type, ner_name=ner_name) if len(list_countries) else PerturbedExamples(ner_type=ner_type, ner_name=ner_name)
         print("Perturbing examples...")
         perturbed_X_text = perturber.all_countries(X_text, y, n_duplicates)
 
@@ -279,13 +279,16 @@ def main_probas(args):
     model, tokenizer, dict_lab, X_text, y = prepare_data_and_model_from_scratch(model_file_path, input_data_file, path_corpus, unlabeled=True)    
 
     model_name_underscore = model_file_path.replace('/', '_')
+    print(args.ner_type, args.ner_name)
     df_bias = _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab,
                                         list_countries=args.list_countries,
                                         n_duplicates=args.n_duplicates,
                                         path_dump_perturbed = os.path.join(path_corpus, f'Perturbed_{args.data_tsv}'),
                                         model_name=model_name_underscore,
                                         male_only=args.male_only,
-                                        emotion_task=False)
+                                        emotion_task=False,
+                                        ner_type=args.ner_type,
+                                        ner_name=args.ner_name)
     out_file_name = f'{model_name_underscore}biases_{input_data_file}.tsv'
     output_path = os.path.join(path_corpus, out_file_name)
     df_bias.to_csv(output_path, sep='\t')
@@ -306,6 +309,8 @@ if __name__ == '__main__':
     parser.add_argument("--male_only", help="Use male only", default=True, action='store_false')
     parser.add_argument("--perturb", help="Apply perturbation to data", default=True, action='store_false')
     parser.add_argument("--emotion_task", help="If the task is emotion classification", default=False, action='store_true')
+    parser.add_argument("--ner_type", help="NER tool to use (spacy or hf)", type=str, choices=["spacy", "hf"], default="spacy")
+    parser.add_argument("--ner_name", help="Name of the NER model to use", type=str, default="xx_ent_wiki_sm")
     args = parser.parse_args()
     main_probas(args)
 
