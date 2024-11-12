@@ -60,6 +60,7 @@ def prepare_data_and_model_from_scratch(
     path_corpus=None, 
     model_gen=TFAutoModelForSequenceClassification, 
     tok_gen=AutoTokenizer,
+    unlabeled=False
     ):
     """
     Load the model, tokenizer, label2id and the tweets with labels
@@ -69,8 +70,7 @@ def prepare_data_and_model_from_scratch(
 
     config = AutoConfig.from_pretrained(model_file_path)
     dict_lab = {k.lower():v for k,v in config.label2id.items()}
-
-    X_text, y = loadTsvData(os.path.join(path_corpus, input_data_file), dict_lab, multi_labels = False, cumsum_label_vectors = False)
+    X_text, y = loadTsvData(os.path.join(path_corpus, input_data_file), dict_lab, multi_labels = False, cumsum_label_vectors = False, unlabeled=unlabeled)
     
     return model, tokenizer, dict_lab, X_text, y
 
@@ -143,7 +143,7 @@ def _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab, list_countr
                               path_dump_perturbed=None,
                               dict_pos_neg = {'positive' : ['yes', 'non-hate', 'non-offensive', 'joy'], 'negative' : ['no', 'hate', 'offensive', 'sadness']}, 
                               perturb=True,
-                              model_name='model', use_existing_dic=True, male_only=False, emotion_task=False):
+                              model_name='model', use_existing_dic=True, male_only=False, emotion_task=False, ner_type= "spacy", ner_name= "xx_ent_wiki_sm"):
     """
     The function itself, taking model, X_text, y as inputs
     """
@@ -151,7 +151,7 @@ def _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab, list_countr
     dict_lab, dict_lab_ini, str_pos, str_neg = create_dict_and_mapping_labels(dict_lab, dict_pos_neg, model_name)
 
     if perturb:
-        perturber = PerturbedExamples(list_countries) if len(list_countries) else PerturbedExamples()
+        perturber = PerturbedExamples(list_countries, ner_type=ner_type, ner_name=ner_name) if len(list_countries) else PerturbedExamples(ner_type=ner_type, ner_name=ner_name)
         print("Perturbing examples...")
         perturbed_X_text = perturber.all_countries(X_text, y, n_duplicates)
 
@@ -271,6 +271,29 @@ def _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab, list_countr
     df_bias['n_sent_modified'] = nb_sent_modified
     return df_bias
 
+def main_probas(args):
+    model_file_path = args.model_name
+    path_corpus = os.path.join(args.path_corpora, args.name_corpora)
+    input_data_file = args.data_tsv
+
+    model, tokenizer, dict_lab, X_text, y = prepare_data_and_model_from_scratch(model_file_path, input_data_file, path_corpus, unlabeled=True)    
+
+    model_name_underscore = model_file_path.replace('/', '_')
+    print(args.ner_type, args.ner_name)
+    df_bias = _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab,
+                                        list_countries=args.list_countries,
+                                        n_duplicates=args.n_duplicates,
+                                        path_dump_perturbed = os.path.join(path_corpus, f'Perturbed_{args.data_tsv}'),
+                                        model_name=model_name_underscore,
+                                        male_only=args.male_only,
+                                        emotion_task=False,
+                                        ner_type=args.ner_type,
+                                        ner_name=args.ner_name)
+    out_file_name = f'{model_name_underscore}biases_{input_data_file}.tsv'
+    output_path = os.path.join(path_corpus, out_file_name)
+    df_bias.to_csv(output_path, sep='\t')
+    print(f"Changes in probabilities and in percentage of examples data written to {output_path}")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -282,31 +305,13 @@ if __name__ == '__main__':
     parser.add_argument("--data_tsv", type=str, help="The tsv file containing the data", default="tweets_test_spanish_val.tsv")
     parser.add_argument("--list_countries", help="Countries to test", type=str, default=['United_Kingdom', "France", 'Spain', 'Germany'], nargs='+')
     parser.add_argument("--n_duplicates", help="How many n_duplicates", type=int, default=10)
-    parser.add_argument("--test", help="test", default=False, action='store_true')
     parser.add_argument("--proba_only", help="Calculate probability only", default=False, action='store_true')
     parser.add_argument("--male_only", help="Use male only", default=True, action='store_false')
     parser.add_argument("--perturb", help="Apply perturbation to data", default=True, action='store_false')
     parser.add_argument("--emotion_task", help="If the task is emotion classification", default=False, action='store_true')
+    parser.add_argument("--ner_type", help="NER tool to use (spacy or hf)", type=str, choices=["spacy", "hf"], default="spacy")
+    parser.add_argument("--ner_name", help="Name of the NER model to use", type=str, default="xx_ent_wiki_sm")
     args = parser.parse_args()
+    main_probas(args)
 
-    model_file_path = args.model_name
-    path_corpus = os.path.join(args.path_corpora, args.name_corpora)
-    input_data_file = args.data_tsv
-
-    model, tokenizer, dict_lab, X_text, y = prepare_data_and_model_from_scratch(model_file_path, input_data_file, path_corpus)    
-
-    model_name_underscore = model_file_path.replace('/', '_')
-    if args.test:
-        X_text = X_text[:200]
-    df_bias = _calculate_sentiment_bias(model, X_text, y, tokenizer, dict_lab,
-                                        list_countries=args.list_countries,
-                                        n_duplicates=args.n_duplicates,
-                                        path_dump_perturbed = os.path.join(path_corpus, f'Perturbed_{args.data_tsv}'),
-                                        model_name=model_name_underscore,
-                                        male_only=args.male_only,
-                                        emotion_task=False)
-    if args.test:
-        print(df_bias)
-    else:
-        out_file_name = f'{model_name_underscore}biases_{input_data_file}.tsv'
-        df_bias.to_csv(os.path.join(path_corpus, out_file_name), sep='\t')
+  

@@ -1,0 +1,18 @@
+{
+    "model_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
+    "name_corpora": ".",
+    "path_corpora": null,
+    "data_tsv": "sample_tweets_with_PER.tsv",
+    "list_countries": ["France"],
+    "n_duplicates": 10,
+    "proba_only": false,
+    "male_only": true,
+    "perturb": true,
+    "emotion_task": false,
+    "ner_type": "hf",
+    "ner_name": "dslim/bert-base-NER",
+    "base_model_name": "cardiffnlp/twitter-xlm-roberta-base",
+    "list_gender": [],
+    "verbose": false,
+    "existing_dic": false
+}

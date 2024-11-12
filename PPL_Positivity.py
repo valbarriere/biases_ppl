@@ -5,7 +5,7 @@ Use it like:
 python ../PPL_Positivity.py \
 --name_corpora PPL_Positivity \
 --data_tsv labeled_data.tsv \
---model_name cardiffnlp/twitter-xlm-roberta-base \
+--base_model_name cardiffnlp/twitter-xlm-roberta-base \
 --list_gender male \
 --verbose
 
@@ -40,28 +40,12 @@ def score(model, tokenizer, sentence):
             loss = model(masked_input, labels=labels).loss
     return loss
     
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model_name", help="The name of the model", type=str, default="cardiffnlp/twitter-xlm-roberta-base")
-    parser.add_argument("-c", "--name_corpora", help="The name of the folder containing the corpora", type=str, 
-                        default="Biases")
-    parser.add_argument("--path_corpora", help="The path of the folders containing all the corpora", type=str, 
-                        default=PATH_DATA)
-    parser.add_argument("--data_tsv", type=str, help="The tsv file containing the data", default="tweets_test_spanish_val.tsv")
-    parser.add_argument("--list_countries", help="Countries to test", type=str, default=[], nargs='+')
-    parser.add_argument("--list_gender", help="Gender to test", type=str, default=[], nargs='+')
-    parser.add_argument("--n_duplicates", help="How many n_duplicates", type=int, default=10)
-    parser.add_argument("--verbose", help="verbose", default=False, action='store_true')
-    parser.add_argument("--existing_dic", help="If already started experiments before", action=argparse.BooleanOptionalAction)
-    parser.add_argument("--use_existing_dic", help="if already started experiments before", default=True)
-                       
-    
-    args = parser.parse_args()
+def main_ppl(args):
     use_existing_dic = args.existing_dic
     path_data = os.path.join(args.path_corpora, args.name_corpora)
 
-    model_name_underscore = args.model_name.replace('/', '_')
-    path_dump_perturbed_ppl = os.path.join(path_data, model_name_underscore)
+    base_model_name_underscore = args.base_model_name.replace('/', '_')
+    path_dump_perturbed_ppl = os.path.join(path_data, base_model_name_underscore)
     os.makedirs(path_dump_perturbed_ppl, exist_ok=True)
     perturbed_file_prefix = f"Perturbed_{args.data_tsv}"
 
@@ -70,9 +54,9 @@ if __name__ == '__main__':
     with open(path_dump_perturbed, 'rb') as fp:
         perturbed_X_text = pkl.load(fp)
 
-    model_name = args.model_name
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForMaskedLM.from_pretrained(model_name, cache_dir=CACHE_DIR)
+    base_model_name = args.base_model_name
+    tokenizer = AutoTokenizer.from_pretrained(base_model_name)
+    model = AutoModelForMaskedLM.from_pretrained(base_model_name, cache_dir=CACHE_DIR)
     if torch.cuda.is_available():
         model.cuda()
 
@@ -80,7 +64,7 @@ if __name__ == '__main__':
 
     list_countries = args.list_countries if len(args.list_countries) else [k for k in perturbed_X_text.keys() if k != 'Original']
     if args.verbose: print('list_countries', list_countries)
-    list_gender = args.list_gender if len(args.list_gender) else ['male', 'female']
+    list_gender = ['male'] if args.male_only else ['male', 'female']
     list_PPL = {ct : {'male':[],'female':[]} for ct in list_countries}
     list_PPL['Original'] = []
     
@@ -112,3 +96,20 @@ if __name__ == '__main__':
         pkl.dump(list_PPL, f)
 
     os.remove(path_dump_perturbed_ppl + '_PPL_buff.pkl')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--base_model_name", help="The name of the model", type=str, default="cardiffnlp/twitter-xlm-roberta-base")
+    parser.add_argument("-c", "--name_corpora", help="The name of the folder containing the corpora", type=str, 
+                        default="Biases")
+    parser.add_argument("--path_corpora", help="The path of the folders containing all the corpora", type=str, 
+                        default=PATH_DATA)
+    parser.add_argument("--data_tsv", type=str, help="The tsv file containing the data", default="tweets_test_spanish_val.tsv")
+    parser.add_argument("--list_countries", help="Countries to test", type=str, default=[], nargs='+')
+    parser.add_argument("--male_only", help="Use male only", default=True, action='store_false')
+    parser.add_argument("--n_duplicates", help="How many n_duplicates", type=int, default=10)
+    parser.add_argument("--verbose", help="verbose", default=False, action='store_true')
+    parser.add_argument("--existing_dic", help="If already started experiments before", action=argparse.BooleanOptionalAction)
+    args = parser.parse_args()
+    main_ppl(args)

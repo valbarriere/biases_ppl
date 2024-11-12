@@ -151,7 +151,7 @@ def create_input_array(sentences, tokenizer, MAX_SEQ_LEN=MAX_SEQ_LEN_INI):
 def read_csv_val(fn, encoding = 'utf-8'):
 	return pd.read_csv(fn, sep='\t', quotechar='"', encoding=encoding, header=0)
 
-def loadTsvData(inputTsvFile, dict_lab={'positive':0, 'negative':1, 'else':2}, enc="utf-8", SPARSE_CATEGORICAL=True, multi_labels=False, cumsum_label_vectors=False, verbose=False):
+def loadTsvData(inputTsvFile, dict_lab={'positive':0, 'negative':1, 'else':2}, enc="utf-8", SPARSE_CATEGORICAL=True, multi_labels=False, cumsum_label_vectors=False, verbose=False, unlabeled=False):
     """
     Load train data. You need the names of the columns on the first line of the CSV...
     """
@@ -159,7 +159,9 @@ def loadTsvData(inputTsvFile, dict_lab={'positive':0, 'negative':1, 'else':2}, e
 
     # normally never happening
     train_tweets = df["tweet"].fillna("CVxTz").values # why 'CVxTz'?
-
+    if unlabeled:
+        train_y = np.full(train_tweets.size, -1)
+        return (train_tweets, train_y)
     # if unlabeled data only 
     list_unique = df['label'].unique()
     if (len(list_unique) == 1) and (list_unique[0] == -1):
@@ -190,7 +192,7 @@ def loadTsvData(inputTsvFile, dict_lab={'positive':0, 'negative':1, 'else':2}, e
                     list_unique = df['label'].unique()
                     print(list_unique)
                     if (len(list_unique) != 1) or (list_unique[0] != '-1'):
-                        raise('Error: dict_lab not working well with the dataset')
+                        raise Exception('Error: dict_lab not working well with the dataset')
                     else:
                         print("Dataset of unlabeled data...ok!")
 

@@ -1,0 +1,20 @@
+{
+    "model_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
+    "name_corpora": "Biases",
+    "path_corpora": null,
+    "data_tsv": "tweets_test_spanish_val.tsv",
+    "list_countries": ["United_Kingdom", "Ireland", "United_States", "Canada", "Australia", "New_Zealand", 
+                       "South_Africa", "India", "Germany", "France", "Spain", "Italy", "Portugal", "Hungary", 
+                       "Poland", "Turkey", "Morocco"],
+    "n_duplicates": 10,
+    "proba_only": false,
+    "male_only": true,
+    "perturb": true,
+    "emotion_task": false,
+    "ner_type": "spacy",
+    "ner_name": "xx_ent_wiki_sm",
+    "base_model_name": "cardiffnlp/twitter-xlm-roberta-base",
+    "list_gender": [],
+    "verbose": false,
+    "existing_dic": false
+}

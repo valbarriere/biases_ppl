@@ -18,6 +18,7 @@ import json
 import pattern
 from pattern.en import tenses
 from .editor import recursive_apply, MunchWithAdd, Editor
+from spacy.tokens import Doc as spacy_doc
 
 BOOL_USE_CHECKLIST_NAMES = True
 
@@ -543,7 +544,7 @@ class Perturb:
 		"""Replace names with other names
 		Parameters
 		----------
-		doc : spacy.token.Doc
+		doc : spacy.token.Doc or HFDoc
 			input
 		meta : bool
 			if True, will return list of (orig_name, new_name) as meta
@@ -563,7 +564,13 @@ class Perturb:
 		"""
 		if seed is not None:
 			np.random.seed(seed)
-		ents = [x.text for x in doc.ents if np.all([a.ent_type_ in ['PERSON', 'PER'] for a in x])]
+		person_tags = ["PERSON", "PER"]
+		ents = (
+			[x.text for x in doc.ents if np.all([a.ent_type_ in person_tags for a in x])]
+			if isinstance(doc, spacy_doc)
+			else
+			[x["word"] for x in doc.ents if x["entity_group"] in person_tags] # Case HF
+		)
 		ret = []
 		ret_m = []
 		for x in ents:

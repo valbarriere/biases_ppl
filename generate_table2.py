@@ -13,18 +13,26 @@ Allows to create the Table 2 of the ACL24 paper
 Author: Anonymous_Submission 01/24
 """
 import pandas as pd
+import pickle as pkl
+import argparse
+import os
 
 from biases_calculation_huggingfacehub_PPL import prepare_data_and_model_from_scratch
+from scipy.special import softmax
+from utils import create_input_array
 
-CACHE_DIR = None
 import torch
 
-from transformers import AutoTokenizer, AutoModelForMaskedLM
+from transformers import AutoTokenizer, AutoModelForMaskedLM, AutoConfig
 from tqdm import tqdm
 
 from scipy.stats import pearsonr
+from dotenv import load_dotenv
 
-PATH_DATA = './'
+
+load_dotenv()
+CACHE_DIR = os.getenv("CACHE_DIR", None)
+PATH_DATA = os.getenv("PATH_DATA", None)
 
 def score(model, tokenizer, sentence):
     """
@@ -57,43 +65,31 @@ def return_label2idx(modelFilePath):
         label2idx = {'negative': 0, 'neutral': 1, 'positive': 2}
 
     return label2idx
-    
-if __name__ == '__main__':
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--path_corpus", help="The path of the folders containing the data", type=str, 
-                        default=PATH_DATA)
-    parser.add_argument("--input_data_file", type=str, default="one_language_data.tsv")
-    parser.add_argument("--list_model_name_PPL", help="countries to test, todo", type=str, default=['cardiffnlp/twitter-xlm-roberta-base', 
-        'cardiffnlp/twitter-roberta-base'], nargs='+')
-    parser.add_argument("--list_model_name_task", help="countries to test, todo", type=str, default=['cardiffnlp/twitter-xlm-roberta-base-sentiment',
-        'cardiffnlp/twitter-roberta-base-hate'], nargs='+')
-    parser.add_argument("--verbose", help="verbose", default=False, action='store_true')
-    args = parser.parse_args()
 
+def main_global_level(args):
     ######################## Init ########################  
 
     list_model_name_PPL = args.list_model_name_PPL
     list_model_name_task = args.list_model_name_task
     input_data_file = args.input_data_file
-    path_corpus = args.path_corpus
+    path_corpora = args.path_corpora
 
-    df = pd.read_csv(input_data_file, sep='\t')
-    list_text = {'Original' : df['text'].values}
+    input_data_path = os.path.join(path_corpora, input_data_file)
+    df = pd.read_csv(input_data_path, sep='\t')
+    list_text = {'Original' : df['tweet'].values}
 
     ######################## Proba ########################  
 
-    path_dump_perturbed = os.path.join(path_corpus, f'Perturbed_{input_data_file}')
+    path_dump_perturbed = os.path.join(path_corpora, f'Perturbed_{input_data_file}')
 
     for modelFilePath in list_model_name_task:
 
         model_name = modelFilePath.replace('/', '_')
-        prepare_data_and_model_from_scratch(model_name, input_data_file, path_corpus)
+        model, tokenizer, dict_lab, X_text, y = prepare_data_and_model_from_scratch(modelFilePath, input_data_file, path_corpora, unlabeled=True)
 
         for lan in list_text.keys():
             path_dump_proba_ini = ('/%s/ProbaIni_'%(model_name)).join(os.path.split(path_dump_perturbed)) + '_%s.pkl'%lan
 
-            print(lan, path_dump_delta_ini)
             input_arrays = create_input_array(list_text[lan], tokenizer)
             try:
                 proba_ini = softmax(model.predict(input_arrays).logits, axis=1)
@@ -106,7 +102,6 @@ if __name__ == '__main__':
 
     list_PPL = {model_name : {} for model_name in list_model_name_PPL}
 
-    list_PPL = {}
     for model_name in list_model_name_PPL:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForMaskedLM.from_pretrained(model_name, cache_dir=CACHE_DIR)
@@ -124,35 +119,37 @@ if __name__ == '__main__':
     pearson_dic = {k : {} for k in list_model_name_task}
     probaini = {k : {} for k in list_model_name_task}
 
-    task = 'cardiffnlp/twitter-xlm-roberta-base-sentiment'
-    model_name = task.replace('/', '_')
+    for task in list_model_name_task:
+        model_name = task.replace('/', '_')
 
-    for lan in list_text.keys():    
-        path_dump_proba_ini = ('/%s/ProbaIni_'%(model_name)).join(os.path.split(path_dump_perturbed)) + '_%s.pkl'%lan
-        with open(path_dump_proba_ini, 'rb') as f:
-            probaini[task][lan] = pkl.load(f)
+        for lan in list_text.keys():
+            path_dump_proba_ini = ('/%s/ProbaIni_'%(model_name)).join(os.path.split(path_dump_perturbed)) + '_%s.pkl'%lan
+            with open(path_dump_proba_ini, 'rb') as f:        
+                probaini[task][lan] = pkl.load(f)
+            model_MLM_name = '-'.join(task.split('-')[:-1])
 
-        model_MLM_name = '-'.join(task.split('-')[:-1])
-
-        label2idx = return_label2idx(task)
-        for lab, idx_lab in label2idx.items(): 
-            cor, _ = pearsonr(list_PPL[model_MLM_name][lan], probaini[task][lan][:,idx_lab])
-            pearson_dic[task][(lan,lab)]  = cor
-
-    task = 'cardiffnlp/twitter-roberta-base-hate'
-    model_name = task.replace('/', '_')
-
-    for lan in list_text.keys():
-        path_dump_proba_ini = ('/%s/ProbaIni_'%(model_name)).join(os.path.split(path_dump_perturbed)) + '_%s.pkl'%lan
-        with open(path_dump_proba_ini, 'rb') as f:        
-            probaini[task][lan] = pkl.load(f)
-        model_MLM_name = '-'.join(task.split('-')[:-1])
-
-        label2idx = return_label2idx(task)
-        for lab, idx_lab in label2idx.items(): 
-            cor, _ = pearsonr(list_PPL[model_MLM_name][lan], probaini[task][lan][:,idx_lab])
-            pearson_dic[task][(lan,lab)]  = cor
+            label2idx = return_label2idx(task)
+            for lab, idx_lab in label2idx.items(): 
+                cor, _ = pearsonr(list_PPL[model_MLM_name][lan], probaini[task][lan][:,idx_lab])
+                pearson_dic[task][(lan,lab)]  = cor
 
     df = [[pearson_dic[task][lan] for lan in pearson_dic[task].keys()] for task in probaini.keys()]
     df = pd.DataFrame(df, index=[task.replace('/', '_') for task in list_model_name_task])
-    df.to_csv(args.path_corpora + '%s/Table2_Correlations_PPL_%s'%(model_name, name_file)+ '.tsv', sep='\t')
+    output_path = path_corpora + '%s/Table2_Correlations_PPL_%s'%(model_name, input_data_file)+ '.tsv'
+    df.to_csv(output_path, sep='\t')
+    print("Global correlation data written to {output_path}")
+    
+if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path_corpora", help="The path of the folders containing the data", type=str, 
+                        default=PATH_DATA)
+    parser.add_argument("--input_data_file", type=str, default="one_language_data.tsv")
+    parser.add_argument("--list_model_name_PPL", help="countries to test, todo", type=str, default=['cardiffnlp/twitter-xlm-roberta-base', 
+        'cardiffnlp/twitter-roberta-base'], nargs='+')
+    parser.add_argument("--list_model_name_task", help="countries to test, todo", type=str, default=['cardiffnlp/twitter-xlm-roberta-base-sentiment',
+        'cardiffnlp/twitter-roberta-base-hate'], nargs='+')
+    parser.add_argument("--verbose", help="verbose", default=False, action='store_true')
+    args = parser.parse_args()
+    main_global_level(args)
+    
