@@ -3,7 +3,7 @@ This repository contains the source code for:
 
 A Study of Nationality Bias in Names and Perplexity using Off-the-Shelf Affect-related Tweet Classifiers (EMNLP 2024)
 
-<img src="misc/fig_pert_prob.png" alt="Data perturbation pipeline" style="width:70%;">
+<img src="misc/fig_pert_prob.png" alt="Data perturbation pipeline" style="width:90%;">
 
 
 ## Content
