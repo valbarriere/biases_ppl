@@ -1,7 +1,12 @@
 # Biases PPL
 This repository contains the source code for:
 
-A Study of Nationality Bias in Names and Perplexity using Off-the-Shelf Affect-related Tweet Classifiers
+A Study of Nationality Bias in Names and Perplexity using Off-the-Shelf Affect-related Tweet Classifiers (EMNLP 2024)
+
+## Content
+- [Requirements](#requirements)
+- [Calculate biases on your own models](#calculate-biases-on-your-own-models)
+- [Run the experiments](#run-the-experiments)
 
 ## Requirements
 
@@ -63,6 +68,19 @@ python tag_tweets_vllm.py -f sample_tweets.tsv \
 ```
 Note that GPU computing may be required for use of certain models
 
+## Calculate biases on your own models
+
+We include a script (`calculate_biases.py`) to calculate biases using probabilities and perplexity. The script accepts arguments directly via the command line or through a JSON configuration file. The JSON file is especially useful for setting multiple parameters at once. An example of a config file is given in `default_calculate_biases_config.json`. The usage of the script is as follows:
+
+```bash
+python calculate_biases.py --config default_calculate_biases_config.json
+```
+
+
+This script allows to use different NER models for the perturbation of the data. At the moment we are working with the Spacy library and HF models. 
+
+To see the details of each field, check the `main` method inside `calculate_biases.py` script. 
+
 ## Run the experiments
 
 First you should run the biases_calculation_huggingfacehub_PPL.py script to perturb the data and calculate the biases and probas using the task finetuned model:
@@ -83,7 +101,7 @@ Then you should run the PPL_Positivity.py script to calculate the PPL over the b
 python PPL_Positivity.py \
 --name_corpora PPL_Positivity \
 --data_tsv labeled_data.tsv \
---model_name cardiffnlp/twitter-xlm-roberta-base
+--base_model_name cardiffnlp/twitter-xlm-roberta-base
 ```
 
 In order to calculate the global-level correlation between perplexity and classes outputs on raw sentences (creating Table 2 of the Paper):
@@ -99,5 +117,5 @@ In order to calculate the local-level correlation between perplexity and classes
 python generate_table3.py \
 --data_tsv labeled_data.tsv \
 --model_name cardiffnlp/twitter-xlm-roberta-base-sentiment \
---model_name_PT cardiffnlp/twitter-xlm-roberta-base
+--base_model_name cardiffnlp/twitter-xlm-roberta-base
 ```
