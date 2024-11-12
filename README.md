@@ -73,52 +73,68 @@ Note that GPU computing may be required for use of certain models
 
 ## Calculate biases on your own models
 
-We include a script (`calculate_biases.py`) to calculate biases using probabilities and perplexity. The script accepts arguments directly via the command line or through a JSON configuration file. The JSON file is especially useful for setting multiple parameters at once. An example of a config file is given in `default_calculate_biases_config.json`. The usage of the script is as follows:
+We include a script (`calculate_biases.py`) to calculate biases using probabilities and perplexity. The script accepts arguments directly via the command line or through a JSON configuration file. The JSON file is especially useful for setting multiple parameters at once. 
+
+An example of a config file is given in `default_calculate_biases_config.json`. 
+
+```json
+{
+    "model_name": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
+    "name_corpora": "Biases",
+    "path_corpora": null,
+    "data_tsv": "tweets_test_spanish_val.tsv",
+    "list_countries": ["United_Kingdom", "Ireland", "United_States", "Canada", "Australia", "New_Zealand", 
+                       "South_Africa", "India", "Germany", "France", "Spain", "Italy", "Portugal", "Hungary", 
+                       "Poland", "Turkey", "Morocco"],
+    "n_duplicates": 10,
+    "proba_only": false,
+    "male_only": true,
+    "perturb": true,
+    "emotion_task": false,
+    "ner_type": "spacy",
+    "ner_name": "xx_ent_wiki_sm",
+    "base_model_name": "cardiffnlp/twitter-xlm-roberta-base",
+    "list_gender": [],
+    "verbose": false,
+    "existing_dic": false
+}
+```
+
+The usage of the script is as follows:
 
 ```bash
 python calculate_biases.py --config default_calculate_biases_config.json
 ```
 
-
 This script allows to use different NER models for the perturbation of the data. At the moment we are working with the Spacy library and HF models. 
 
 To see the details of each field, check the `main` method inside `calculate_biases.py` script. 
 
-## Run the experiments
+## Others 
 
-First you should run the biases_calculation_huggingfacehub_PPL.py script to perturb the data and calculate the biases and probas using the task finetuned model:
+More information on how to reproduce the experiments [here](./Readme_expe.md)
 
-```bash
-python biases_calculation_huggingfacehub_PPL.py \
---name_corpora PPL_Positivity \
---data_tsv labeled_data.tsv \
---list_countries France United_Kingdom Ireland Spain Germany Italy Morocco \
-India Canada Australia New_Zealand United_States South_Africa \
-Portugal Hungary Poland Turkey \
---n_duplicates 50 \
---model_name cardiffnlp/twitter-xlm-roberta-base-sentiment
+If you use the bias detection technique, you can cite our COLING24 paper: 
+
+```
+@inproceedings{barriere2024text,
+  title={Are Text Classifiers Xenophobic? A Country-Oriented Bias Detection Method with Least Confounding Variables},
+  author={Barriere, Valentin and Cifuentes, Sebastian},
+  booktitle={Proceedings of the 2024 Joint International Conference on Computational Linguistics, Language Resources and Evaluation (LREC-COLING 2024)},
+  pages={1511--1518},
+  year={2024}
+}
 ```
 
-Then you should run the PPL_Positivity.py script to calculate the PPL over the base model:
-```bash
-python PPL_Positivity.py \
---name_corpora PPL_Positivity \
---data_tsv labeled_data.tsv \
---base_model_name cardiffnlp/twitter-xlm-roberta-base
+If you use the code of the perplexity analysis, you can cite our EMNLP24 paper: 
+
+```
+@inproceedings{barriere2024study,
+  title={A Study of Nationality Bias in Names and Perplexity using Off-the-Shelf Affect-related Tweet Classifiers},
+  author={Barriere, Valentin and Cifuentes, Sebastian},
+  booktitle={Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing},
+  pages={569--579},
+  year={2024}
+}
 ```
 
-In order to calculate the global-level correlation between perplexity and classes outputs on raw sentences (creating Table 2 of the Paper):
-```bash
-python generate_table2.py \
---input_data_file one_language_data.tsv \
---list_model_name_PPL cardiffnlp/twitter-roberta-base cardiffnlp/twitter-xlm-roberta-base \
---list_model_name_task cardiffnlp/twitter-xlm-roberta-base-sentiment cardiffnlp/twitter-roberta-base-hate
-```
-
-In order to calculate the local-level correlation between perplexity and classes outputs on perturbated sentences (creating Table 3 of the Paper):
-```bash
-python generate_table3.py \
---data_tsv labeled_data.tsv \
---model_name cardiffnlp/twitter-xlm-roberta-base-sentiment \
---base_model_name cardiffnlp/twitter-xlm-roberta-base
-```
