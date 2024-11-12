@@ -5,7 +5,7 @@ It uses the already-made pkl files of the PPL and the pkl files of the Probabili
 ex: 
 python generate_correlations.py \
 --model_name cardiffnlp/twitter-roberta-base-offensive \
---model_name_PT cardiffnlp/twitter-roberta-base
+--base_model_name cardiffnlp/twitter-roberta-base
 
 Allows to create the Table 3 of the ACL24 paper
 
@@ -38,15 +38,11 @@ def main_local_level(args):
 
     name_file = args.data_tsv
     model_name = args.model_name.replace('/', '_')
-    model_name_PT = args.model_name_PT.replace('/', '_')
+    base_model_name = args.base_model_name.replace('/', '_')
     list_countries = args.list_countries
     list_gender = ['male'] if args.male_only else ['male', 'female']
 
-    path_dump_perturbed = args.path_corpora + 'Perturbed_' + name_file
-    path_dump_PPL = args.path_corpora + '%s/Perturbed_'%model_name_PT + name_file + '_PPL.pkl'
-
-    with open(path_dump_perturbed, 'rb') as fp:
-        perturbed_X_text = pkl.load(fp)
+    path_dump_PPL = args.path_corpora + '%s/Perturbed_'%base_model_name + name_file + '_PPL.pkl'
 
     with open(path_dump_PPL, 'rb') as f:
         list_PPL = pkl.load(f)
@@ -108,13 +104,13 @@ def main_local_level(args):
     output_path = args.path_corpora + '%s/Table3_Correlations_PPL_%s'%(model_name, name_file)+ '.tsv'
     df.to_csv(output_path, sep='\t', index=False)
     print(f"Local correlation data written to {output_path}")
-    
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--model_name", help="The name of the model name", type=str, default="cardiffnlp/twitter-xlm-roberta-base-sentiment", 
                  )
-    parser.add_argument("--model_name_PT", help="The name of the pre-trained model name (if different)", type=str, default="cardiffnlp/twitter-xlm-roberta-base", 
+    parser.add_argument("--base_model_name", help="The name of the pre-trained model name (if different)", type=str, default="cardiffnlp/twitter-xlm-roberta-base", 
                  )
     parser.add_argument("--path_corpora", help="The path of the folders containing all the corpora", type=str, 
                         default=PATH_DATA)
