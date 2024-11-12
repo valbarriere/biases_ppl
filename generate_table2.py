@@ -72,20 +72,20 @@ def main_global_level(args):
     list_model_name_PPL = args.list_model_name_PPL
     list_model_name_task = args.list_model_name_task
     input_data_file = args.input_data_file
-    path_corpus = args.path_corpus
+    path_corpora = args.path_corpora
 
-    input_data_path = os.path.join(path_corpus, input_data_file)
+    input_data_path = os.path.join(path_corpora, input_data_file)
     df = pd.read_csv(input_data_path, sep='\t')
     list_text = {'Original' : df['tweet'].values}
 
     ######################## Proba ########################  
 
-    path_dump_perturbed = os.path.join(path_corpus, f'Perturbed_{input_data_file}')
+    path_dump_perturbed = os.path.join(path_corpora, f'Perturbed_{input_data_file}')
 
     for modelFilePath in list_model_name_task:
 
         model_name = modelFilePath.replace('/', '_')
-        model, tokenizer, dict_lab, X_text, y = prepare_data_and_model_from_scratch(modelFilePath, input_data_file, path_corpus, unlabeled=True)
+        model, tokenizer, dict_lab, X_text, y = prepare_data_and_model_from_scratch(modelFilePath, input_data_file, path_corpora, unlabeled=True)
 
         for lan in list_text.keys():
             path_dump_proba_ini = ('/%s/ProbaIni_'%(model_name)).join(os.path.split(path_dump_perturbed)) + '_%s.pkl'%lan
@@ -135,14 +135,14 @@ def main_global_level(args):
 
     df = [[pearson_dic[task][lan] for lan in pearson_dic[task].keys()] for task in probaini.keys()]
     df = pd.DataFrame(df, index=[task.replace('/', '_') for task in list_model_name_task])
-    output_path = path_corpus + '%s/Table2_Correlations_PPL_%s'%(model_name, input_data_file)+ '.tsv'
+    output_path = path_corpora + '%s/Table2_Correlations_PPL_%s'%(model_name, input_data_file)+ '.tsv'
     df.to_csv(output_path, sep='\t')
     print("Global correlation data written to {output_path}")
     
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path_corpus", help="The path of the folders containing the data", type=str, 
+    parser.add_argument("--path_corpora", help="The path of the folders containing the data", type=str, 
                         default=PATH_DATA)
     parser.add_argument("--input_data_file", type=str, default="one_language_data.tsv")
     parser.add_argument("--list_model_name_PPL", help="countries to test, todo", type=str, default=['cardiffnlp/twitter-xlm-roberta-base', 
